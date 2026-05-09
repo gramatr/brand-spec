@@ -55,6 +55,43 @@ Body (target ≈ 2-4K tokens):
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
 
+## What's new in v1.2
+
+Four additive schema changes, all backward-compatible with v1.1:
+
+1. **Multi-register voice.** Brands can now use a `voice/` directory
+   with one file per register (e.g., `voice/registers/corporate.md`,
+   `voice/registers/engineering.md`) plus a `voice/README.md` index.
+   Use this when one brand has multiple distinct on-brand voices that
+   vary by channel or context. Single-register `voice.md` (the v1.1
+   default) is unchanged. A brand uses one pattern OR the other —
+   never both. See [`templates/multi-register-voice-example/`](./templates/multi-register-voice-example/).
+
+2. **Source authority metadata.** Optional `source_authority`
+   frontmatter on any file declares whether the file is `canonical`,
+   `mirror`, `historical`, or `fixture-only`. Lets validators and
+   agents know not to treat an intentionally-stale fixture as truth.
+   Defaults to `canonical` when omitted.
+
+3. **File-level visibility classification.** Optional `visibility`
+   frontmatter on any file: `public`, `customer`, `internal`, or
+   `sales-enablement`. Tools generating public artifacts MUST filter
+   out non-public files. Defaults to `public` when omitted.
+   Backward-compat: legacy `audience: internal` on
+   `proof/competitive.md` is treated as `visibility: internal` with a
+   migration warning.
+
+4. **Data file lineage.** When `source_authority.status: mirror`, an
+   optional `refresh:` sub-block declares cadence (`manual`,
+   `on-deploy`, `weekly`, `monthly`, `on-source-change`),
+   `last_synced` date, and optional `sync_method`. Validators warn
+   when mirrors look stale relative to declared cadence.
+
+All four are additive. v1.1 brands validate cleanly against v1.2 with
+zero changes.
+
+See [`CHANGELOG.md`](./CHANGELOG.md) for the full version history.
+
 ## Required vs. Recommended vs. Optional
 
 The three levels are explicit on every layer in `brand.yaml`:

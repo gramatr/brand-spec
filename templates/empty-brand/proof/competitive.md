@@ -1,6 +1,6 @@
 ---
 type: competitive-positioning
-audience: internal
+visibility: sales-enablement
 version: "0.1"
 status: sample
 last_updated: "2026-01-01"
