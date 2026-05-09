@@ -9,6 +9,7 @@ domains:
   - example.com
 founded: 2026
 org: TODO-github-org
+status: sample
 ---
 
 # {Brand}

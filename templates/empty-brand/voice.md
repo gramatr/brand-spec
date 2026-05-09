@@ -2,6 +2,7 @@
 default_tone: TODO
 reading_level: TODO
 perspective: TODO  # first-person | second-person | third-person
+status: sample
 ---
 
 # Voice

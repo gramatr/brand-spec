@@ -4,6 +4,7 @@ content_type: TODO-content-type-slug
 version: "0.1"
 validated: false
 examples: []
+status: sample
 ---
 
 # {Content Type} Prompt

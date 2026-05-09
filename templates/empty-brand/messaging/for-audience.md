@@ -4,6 +4,7 @@ headline: TODO
 description: TODO
 pain_point: TODO
 desired_outcome: TODO
+status: sample
 ---
 
 # For {Audience}
