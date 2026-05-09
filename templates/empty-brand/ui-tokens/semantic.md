@@ -1,6 +1,7 @@
 ---
 layer: semantic
-depends-on: primitives.md
+depends-on:
+  - primitives.md
 version: "0.1"
 status: sample
 last_updated: "2026-01-01"

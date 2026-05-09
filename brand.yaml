@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.0.0
+contract_version: 1.1.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -38,8 +38,14 @@ conventions:
         notes: "ISO date 'YYYY-MM-DD'; alias 'updated' is also acceptable"
       status:
         type: string
-        enum: [draft, active, canonical, open, archived]
-        notes: "lifecycle marker; 'open' used for known-incomplete specs"
+        enum: [draft, active, canonical, open, archived, sample]
+        notes: |
+          Lifecycle marker. 'open' = known-incomplete spec. 'sample' =
+          template/example file shipped as scaffolding (e.g., contents
+          of templates/empty-brand/); validators MAY skip strict value
+          validation for files marked `status: sample`, so placeholder
+          values like `slug: TODO-kebab-case-slug` or `perspective: TODO`
+          are tolerated. Real brand content MUST NOT use `status: sample`.
   file_naming:
     case: kebab-case
     patterns:
@@ -199,17 +205,37 @@ layers:
             required: false
             frontmatter:
               layer:      { type: string, required: true, const: semantic }
-              depends-on: { type: string, required: false, notes: "must reference primitives.md" }
+              depends-on:
+                type: array
+                required: false
+                items: { type: string }
+                notes: |
+                  List of parent ui-tokens layer files this layer
+                  depends on. Semantic SHOULD reference
+                  `primitives.md`. A layer MAY depend on multiple
+                  parent layers (e.g., a component layer depending on
+                  both `semantic.md` and `motion.md`).
           - path: component.md
             required: false
             frontmatter:
               layer:      { type: string, required: true, const: component }
-              depends-on: { type: string, required: false }
+              depends-on:
+                type: array
+                required: false
+                items: { type: string }
+                notes: |
+                  List of parent ui-tokens layers. Components SHOULD
+                  depend on `semantic.md` (and MAY also depend on
+                  `motion.md`, `dark-mode.md`, etc.).
           - path: dark-mode.md
             required: false
             frontmatter:
               layer:      { type: string, required: true, const: dark-mode }
-              depends-on: { type: string, required: false }
+              depends-on:
+                type: array
+                required: false
+                items: { type: string }
+                notes: "List of parent layers (typically `semantic.md`)."
           - path: motion.md
             required: false
             frontmatter:
@@ -306,14 +332,16 @@ layers:
             required: false
             recommended: true
             frontmatter:
-              type:    { type: string, required: false, const: proof-library }
-              version: { type: string, required: false }
+              type:         { type: string, required: false, const: proof-library }
+              version:      { type: string, required: false }
+              last_updated: { type: string, required: true, format: date, notes: "YYYY-MM-DD; proof claims go stale" }
           - path: competitive.md
             required: false
             frontmatter:
-              type:     { type: string, required: false, const: competitive-positioning }
-              audience: { type: string, required: false, notes: "e.g., 'internal' for sales-enablement-only" }
-              version:  { type: string, required: false }
+              type:         { type: string, required: false, const: competitive-positioning }
+              audience:     { type: string, required: false, notes: "e.g., 'internal' for sales-enablement-only" }
+              version:      { type: string, required: false }
+              last_updated: { type: string, required: true, format: date, notes: "YYYY-MM-DD; competitive maps decay quickly" }
 
   # --- DATA --------------------------------------------------------------
   data:
@@ -356,9 +384,25 @@ layers:
             recommended: true
             min_files: 1
             frontmatter:
-              title:   { type: string, required: true }
-              version: { type: string, required: false }
-              source:  { type: string, required: false, notes: "where the canonical claims came from" }
+              title:        { type: string, required: true }
+              version:      { type: string, required: false }
+              source:       { type: string, required: false, notes: "where the canonical claims came from" }
+              last_updated: { type: string, required: true, format: date, notes: "YYYY-MM-DD; product changes frequently — freshness signals trustworthiness" }
+            body_sections_recommended:
+              - "What it is"
+              - "How it works"
+              - "What's included"
+              - "What's NOT included"
+              - "Pricing"           # or "Pricing model"
+              - "Integrations"
+              - "Known limitations"
+            notes: |
+              Body sections are recommended, not required — different
+              products have different shapes (e.g., a service-only
+              brand has no `Integrations`; a free product has no
+              `Pricing`). The list above is the structure that emerged
+              from the first reverse-engineered brand and is a useful
+              default.
 
   # --- EXAMPLES ----------------------------------------------------------
   examples:
@@ -418,9 +462,10 @@ layers:
           - glob: "*.md"
             required: false
             frontmatter:
-              type:   { type: string, required: false, notes: "e.g., 'design-spec'" }
-              status: { type: string, required: false, notes: "'open' = work-in-progress; 'closed' = resolved" }
-              area:   { type: string, required: false, notes: "e.g., 'social', 'email'" }
+              type:         { type: string, required: false, notes: "e.g., 'design-spec'" }
+              status:       { type: string, required: false, notes: "'open' = work-in-progress; 'closed' = resolved" }
+              area:         { type: string, required: false, notes: "e.g., 'social', 'email'" }
+              last_updated: { type: string, required: true, format: date, notes: "YYYY-MM-DD; open design questions go stale and need re-review" }
 
   # --- META --------------------------------------------------------------
   meta:
@@ -471,3 +516,26 @@ validation:
       If agent-context.md exists, every entry in
       frontmatter.priority_layers MUST name a layer declared in this
       schema's `layers:` block.
+  - id: proof-freshness-warn
+    severity: warn
+    rule: |
+      Validators SHOULD warn (not error) if any file under proof/ has
+      frontmatter.last_updated older than 180 days. Proof claims decay;
+      a stale proof library is a liability in sales conversations.
+  - id: design-specs-freshness-warn
+    severity: warn
+    rule: |
+      Validators SHOULD warn if any file under design/ has
+      frontmatter.last_updated older than 90 days. Open design questions
+      that haven't been revisited in a quarter are likely abandoned.
+  - id: sample-status-tolerates-placeholders
+    rule: |
+      Files with frontmatter.status = sample are template scaffolding,
+      not real brand content. Validators MAY skip strict value
+      validation (e.g., placeholder slugs, TODO strings, enum-violating
+      values) for these files. A real brand repo SHOULD NOT contain any
+      file with status = sample once it is live.
+  - id: ui-tokens-depends-on-resolves
+    rule: |
+      Every entry in a ui-tokens file's frontmatter.depends-on array
+      MUST name a sibling file under ui-tokens/ that exists.

@@ -7,6 +7,7 @@ priority_layers:
   - vocabulary
   - personas
   - examples
+status: sample
 ---
 
 # Agent Context

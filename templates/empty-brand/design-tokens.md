@@ -1,6 +1,7 @@
 ---
 mode: TODO  # dark-primary | light-primary | mixed
 design_system: TODO
+status: sample
 ---
 
 # Design Tokens
