@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.1.0
+contract_version: 1.2.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -46,6 +46,82 @@ conventions:
           validation for files marked `status: sample`, so placeholder
           values like `slug: TODO-kebab-case-slug` or `perspective: TODO`
           are tolerated. Real brand content MUST NOT use `status: sample`.
+      visibility:
+        type: string
+        enum: [public, customer, internal, sales-enablement]
+        required: false
+        notes: |
+          (v1.2) Optional file-level visibility classification. Default
+          when omitted is `public`. Consuming-tool contract:
+            - `public`           — safe in public-facing generation,
+                                   websites, marketing.
+            - `customer`         — share with customers but not on public
+                                   surfaces (e.g., onboarding decks).
+            - `internal`         — internal use only; never include in
+                                   public/customer-facing generation.
+            - `sales-enablement` — internal sales-only; agents generating
+                                   customer-facing content MUST NOT
+                                   include.
+          Tools that generate public artifacts (Studio public renderers,
+          website builders, AI agents producing marketing copy) MUST
+          filter out anything with `visibility` ≠ `public`. Tools
+          generating internal artifacts MAY include all.
+
+          Backward compatibility: if a v1.1 file uses `audience: internal`
+          (observed historically on `proof/competitive.md`), validators
+          SHOULD treat it as `visibility: internal` and emit a warning
+          recommending migration to the `visibility` field.
+      source_authority:
+        type: object
+        required: false
+        notes: |
+          (v1.2) Optional declaration of this file's authority relative
+          to other sources of the same brand fact. Default when omitted
+          is `status: canonical`.
+        properties:
+          status:
+            type: string
+            enum: [canonical, mirror, historical, fixture-only]
+            required: true
+            notes: |
+              - `canonical`     — this file is the source of truth.
+              - `mirror`        — this file mirrors `upstream`; do not
+                                  edit here, edit upstream. Validators
+                                  MAY compare against upstream.
+              - `historical`    — represents an earlier brand state, kept
+                                  for reference only; ignore for current
+                                  brand decisions.
+              - `fixture-only`  — exists for test/demo purposes and
+                                  intentionally diverges from canonical;
+                                  ignore for brand decisions.
+          upstream:
+            type: string
+            required_when: "status in [mirror, historical]"
+            notes: "path or URL to the upstream/canonical source."
+          notes:
+            type: string
+            required_when: "status in [historical, fixture-only]"
+            notes: "free-text — explain why this non-canonical file exists."
+          refresh:
+            type: object
+            required: false
+            notes: |
+              Only meaningful when `status: mirror`. Declares how the
+              mirror is kept current.
+            properties:
+              cadence:
+                type: string
+                enum: [manual, on-deploy, weekly, monthly, on-source-change]
+                required: true
+              last_synced:
+                type: string
+                format: date
+                required: true
+                notes: "YYYY-MM-DD; when the mirror was last reconciled with upstream."
+              sync_method:
+                type: string
+                required: false
+                notes: "free-text — how the mirror is kept current (script, manual copy, build step, etc.)."
   file_naming:
     case: kebab-case
     patterns:
@@ -130,10 +206,31 @@ layers:
   # --- VOICE -------------------------------------------------------------
   voice:
     required: true
-    description: "How the brand sounds. Voice attributes, tone rules, what it is NOT."
+    description: |
+      How the brand sounds. Voice attributes, tone rules, what it is NOT.
+
+      (v1.2) A brand MAY use ONE of two patterns — never both:
+
+      1. Single-register (v1.1, default): a `voice.md` file at the brand
+         root. Use this when one voice is canonical for all contexts.
+
+      2. Multi-register (v1.2): a `voice/` directory containing
+         `voice/registers/{register-slug}.md` per register, plus a
+         `voice/README.md` (or `voice/_index.md`) that lists registers and
+         documents when each applies. Use this when a brand has multiple
+         distinct on-brand voices that vary by channel or context (e.g.,
+         corporate marketing voice vs. engineering/agent voice vs. founder
+         byline voice — all on-brand, contextually distinct).
+
+      Mixing the two patterns within a single brand is invalid (see
+      `voice-pattern-exclusive` validation rule).
     files:
       - path: voice.md
-        required: true
+        required: false
+        recommended: true
+        notes: |
+          Required when the brand uses the single-register pattern.
+          MUST NOT exist when the brand uses the multi-register pattern.
         frontmatter:
           default_tone:   { type: string, required: false, notes: "e.g., 'confident-direct'" }
           reading_level:  { type: string, required: false, notes: "e.g., 'professional'" }
@@ -144,6 +241,49 @@ layers:
           - "What the Voice Is NOT"
           - "Tone Rules"
           - "Published Voice Examples"
+    directories:
+      - path: voice/
+        required: false
+        notes: |
+          (v1.2) Multi-register voice directory. When present, `voice.md`
+          at the root MUST NOT exist.
+        contents:
+          - path: README.md
+            required: false
+            notes: |
+              Required (as either `README.md` or `_index.md`) when the
+              `voice/` directory exists. Lists the registers and
+              documents when each applies (channel/context coverage,
+              precedence rules when multiple could apply).
+          - path: _index.md
+            required: false
+            notes: "Alternative to README.md; same purpose."
+          - pattern: "registers/{register-slug}.md"
+            required: false
+            min_files: 1
+            notes: |
+              At least one register file MUST exist when the multi-register
+              pattern is used.
+            frontmatter:
+              register:    { type: string, required: true, notes: "register slug; matches filename" }
+              applies_to:
+                type: array
+                required: true
+                items: { type: string }
+                notes: |
+                  Channels/contexts where this register is canonical
+                  (e.g., `[website, blog, marketing-emails]` for
+                  corporate; `[code-comments, agent-prompts, technical-docs]`
+                  for engineering).
+              default_tone:   { type: string, required: false, notes: "e.g., 'confident-direct'" }
+              reading_level:  { type: string, required: false, notes: "e.g., 'professional'" }
+              perspective:    { type: string, required: false, enum: [first-person, second-person, third-person] }
+            body_sections_recommended:
+              - "Core Characterization"
+              - "Voice Attributes"
+              - "What the Voice Is NOT"
+              - "Tone Rules"
+              - "Published Voice Examples"
 
   # --- VOCABULARY --------------------------------------------------------
   vocabulary:
@@ -339,7 +479,8 @@ layers:
             required: false
             frontmatter:
               type:         { type: string, required: false, const: competitive-positioning }
-              audience:     { type: string, required: false, notes: "e.g., 'internal' for sales-enablement-only" }
+              visibility:   { type: string, required: false, notes: "(v1.2) typically 'sales-enablement'; see conventions.frontmatter.common_fields.visibility" }
+              audience:     { type: string, required: false, notes: "DEPRECATED in v1.2 — use `visibility` instead. If `audience: internal` is present, validators treat it as `visibility: internal` and warn." }
               version:      { type: string, required: false }
               last_updated: { type: string, required: true, format: date, notes: "YYYY-MM-DD; competitive maps decay quickly" }
 
@@ -487,7 +628,55 @@ validation:
   - id: identity-required
     rule: "identity.md MUST exist with frontmatter.slug and frontmatter.name"
   - id: voice-required
-    rule: "voice.md MUST exist"
+    rule: |
+      The brand MUST provide a voice layer using exactly ONE of two
+      patterns:
+        (a) single-register: `voice.md` at the brand root, OR
+        (b) multi-register (v1.2): a `voice/` directory containing at
+            least one `voice/registers/{register-slug}.md` and a
+            `voice/README.md` (or `voice/_index.md`).
+  - id: voice-pattern-exclusive
+    rule: |
+      (v1.2) If `voice/` directory exists, `voice.md` at the brand root
+      MUST NOT exist (and vice versa). Mixing patterns within a single
+      brand is invalid.
+  - id: voice-multi-register-index
+    rule: |
+      (v1.2) When the multi-register pattern is used, `voice/README.md`
+      OR `voice/_index.md` MUST exist (exactly one). At least one file
+      under `voice/registers/` MUST exist, and each MUST have
+      frontmatter.register and frontmatter.applies_to populated.
+  - id: source-authority-upstream-required
+    rule: |
+      (v1.2) If a file's `source_authority.status` is `mirror` or
+      `historical`, `source_authority.upstream` MUST be present. When
+      `upstream` is a path, the file MUST exist; when it is a URL, it
+      MUST be well-formed.
+  - id: source-authority-notes-required
+    rule: |
+      (v1.2) If a file's `source_authority.status` is `historical` or
+      `fixture-only`, `source_authority.notes` MUST be present and
+      non-empty.
+  - id: source-authority-mirror-freshness-warn
+    severity: warn
+    rule: |
+      (v1.2) If `source_authority.status: mirror` and
+      `source_authority.refresh.last_synced` is older than the cadence
+      implies (weekly cadence + last_synced > 14 days; monthly + > 60
+      days; on-deploy/on-source-change/manual = no automatic warning),
+      validators SHOULD warn that the mirror may be stale.
+  - id: visibility-default-public
+    rule: |
+      (v1.2) If `visibility` is omitted, the file is treated as
+      `visibility: public`. Tools generating public-facing artifacts
+      MUST filter out files where `visibility` ≠ `public`.
+  - id: visibility-audience-internal-backcompat
+    severity: warn
+    rule: |
+      (v1.2) If a file uses the v1.1 `audience: internal` field on
+      `proof/competitive.md`, validators SHOULD treat it as
+      `visibility: internal` and warn, recommending migration to the
+      new `visibility` field.
   - id: vocabulary-required
     rule: "vocabulary.md MUST exist (frontmatter MAY be empty)"
   - id: design-tokens-required
