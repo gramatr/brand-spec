@@ -1,0 +1,473 @@
+# brand-spec — Brand Definition Contract
+#
+# Schema describing the file/folder layout and frontmatter conventions a
+# brand repo MUST (required), SHOULD (recommended), or MAY (optional)
+# provide so it can be ingested by AI agents and downstream tools (e.g.,
+# grāmatr Studio).
+#
+# This file is the source of truth for "what makes a brand definition
+# valid." It was reverse-engineered from the first concrete brand repo
+# that adopted the conventions; values listed under any `_observed`
+# fields are illustrative, not prescriptive. See README.md for usage,
+# scaffolding guidance, and how brands map their content into the
+# abstract slots defined here.
+
+schema_version: 1
+contract_name: gramatr.brand
+contract_version: 1.0.0
+
+# -----------------------------------------------------------------------------
+# Cross-cutting conventions
+# -----------------------------------------------------------------------------
+
+conventions:
+  file_format: markdown        # all content files are .md with optional YAML frontmatter
+  data_format: yaml            # files under data/ are pure YAML
+  frontmatter:
+    syntax: yaml               # delimited by --- ... ---
+    presence: optional         # files MAY omit frontmatter; if present, must parse
+    common_fields:             # fields observed across multiple file types
+      version:
+        type: string
+        notes: "semver or simple decimal (e.g., '1.0', '1.0.0'); used for change tracking"
+      brand:
+        type: string
+        notes: "brand name; redundant with identity.name but useful for standalone files"
+      last_updated:
+        type: string
+        notes: "ISO date 'YYYY-MM-DD'; alias 'updated' is also acceptable"
+      status:
+        type: string
+        enum: [draft, active, canonical, open, archived]
+        notes: "lifecycle marker; 'open' used for known-incomplete specs"
+  file_naming:
+    case: kebab-case
+    patterns:
+      messaging_audience: "messaging/for-{audience}.md"
+      messaging_channel: "messaging/channel-{channel}.md"
+      persona: "personas/{audience}-{role}.md"
+      persona_archive: "personas/_archive/{slug}.md"
+      framework_doc: "personas/_framework.md"   # underscore prefix = framework/meta, not a persona
+      data_file: "data/{topic}.yaml"
+      example: "examples/{content-type}-{slug}.md"
+      prompt: "prompts/{content-type}.md"
+      ui_token: "ui-tokens/{layer}.md"
+  reserved_prefixes:
+    underscore: "files/dirs starting with _ are framework, archive, or manifest — not content instances"
+
+# -----------------------------------------------------------------------------
+# Layers
+# -----------------------------------------------------------------------------
+# Each layer is required | recommended | optional.
+#   required    — Conforming consumers refuse to ingest without it.
+#   recommended — Consumers ingest but degrade (warns; some downstream
+#                 features unavailable).
+#   optional    — Purely additive.
+
+layers:
+
+  # --- AGENT CONTEXT ----------------------------------------------------
+  agent_context:
+    required: false
+    recommended: true
+    description: |
+      A compressed, AI-agent-facing summary of the brand. Acts as the
+      "brand's CLAUDE.md" — the entry point for context-constrained
+      agents that cannot or should not load every layer up front. Small
+      brands MAY skip this; larger brands benefit from a curated digest
+      that fits in a single prompt window.
+    files:
+      - path: agent-context.md
+        required: false
+        recommended: true
+        frontmatter:
+          schema_version:   { type: integer, required: true,  notes: "matches brand-spec schema_version this file targets" }
+          summary:          { type: string,  required: true,  notes: "1-paragraph human description of the brand" }
+          priority_layers:  { type: array,   required: true,  items: { type: string }, notes: "ordered list of layers an agent should load first if context is constrained" }
+        body_sections_recommended:
+          - "Voice (one paragraph)"
+          - "Top 5 vocabulary do/don't"
+          - "Persona summary"
+          - "Anything else essential"
+        notes: |
+          Target body size ≈ 2-4K tokens. The goal is "one prompt window
+          gives an agent enough to write on-brand without loading the
+          full repo." When the agent has more budget, it SHOULD load
+          the layers named in `priority_layers` next.
+
+  # --- IDENTITY ----------------------------------------------------------
+  identity:
+    required: true
+    description: "Who the brand is. The single most-load-bearing file in the repo."
+    files:
+      - path: identity.md
+        required: true
+        frontmatter:
+          slug:        { type: string, required: true,  notes: "kebab-case repo identifier" }
+          name:        { type: string, required: true,  notes: "display name" }
+          legal_name:  { type: string, required: false }
+          tagline:     { type: string, required: true }
+          industry:    { type: string, required: false }
+          website:     { type: string, required: false, format: url }
+          domains:     { type: array,  required: false, items: { type: string } }
+          founded:     { type: integer, required: false }
+          org:         { type: string, required: false, notes: "e.g., GitHub org slug" }
+        body_sections_recommended:
+          - Positioning
+          - "Elevator Pitch"
+          - One-liner
+          - Mission
+          - Founders
+          - "What {Brand} Is Not"
+          - "Proprietary Concepts"
+
+  # --- VOICE -------------------------------------------------------------
+  voice:
+    required: true
+    description: "How the brand sounds. Voice attributes, tone rules, what it is NOT."
+    files:
+      - path: voice.md
+        required: true
+        frontmatter:
+          default_tone:   { type: string, required: false, notes: "e.g., 'confident-direct'" }
+          reading_level:  { type: string, required: false, notes: "e.g., 'professional'" }
+          perspective:    { type: string, required: false, enum: [first-person, second-person, third-person] }
+        body_sections_recommended:
+          - "Core Characterization"
+          - "Voice Attributes"
+          - "What the Voice Is NOT"
+          - "Tone Rules"
+          - "Published Voice Examples"
+
+  # --- VOCABULARY --------------------------------------------------------
+  vocabulary:
+    required: true
+    description: "Preferred terms, forbidden terms, glossary. Drives lint at generation time."
+    files:
+      - path: vocabulary.md
+        required: true
+        frontmatter: {}        # observed empty; reserved for future fields
+        body_sections_recommended:
+          - "Preferred Terms"
+          - "Forbidden Terms"
+          - "Glossary"
+
+  # --- DESIGN TOKENS -----------------------------------------------------
+  design:
+    required: true
+    description: "Visual system: colors, typography, modes, logo references."
+    files:
+      - path: design-tokens.md
+        required: true
+        frontmatter:
+          mode:          { type: string, required: false, notes: "e.g., 'dark-primary' | 'light-primary' | 'mixed'" }
+          design_system: { type: string, required: false, notes: "e.g., the upstream design system the brand extends" }
+        body_sections_recommended:
+          - "Visual Mode"
+          - Colors
+          - Typography
+          - Email
+          - Logos
+    directories:
+      - path: assets/
+        required: true
+        contents:
+          - { path: _manifest.md, required: true,  notes: "approved asset registry with usage context" }
+          - { glob: "*.svg",      required: false, notes: "logo and brand mark vectors" }
+          - { glob: "*.png|*.jpg", required: false }
+      - path: fonts/
+        required: false
+        notes: "self-hosted typeface files; license file (e.g., OFL-*.txt) MUST accompany"
+
+  # --- UI TOKENS (three-layer system) ------------------------------------
+  ui_tokens:
+    required: false
+    recommended: true
+    description: |
+      Three-layer token system (primitive → semantic → component) plus
+      mode and motion overlays. Required when the brand drives application
+      UI; optional for marketing-only brands.
+    directories:
+      - path: ui-tokens/
+        contents:
+          - path: primitives.md
+            required: false
+            frontmatter:
+              layer:   { type: string, required: true, const: primitive }
+              version: { type: string, required: false }
+          - path: semantic.md
+            required: false
+            frontmatter:
+              layer:      { type: string, required: true, const: semantic }
+              depends-on: { type: string, required: false, notes: "must reference primitives.md" }
+          - path: component.md
+            required: false
+            frontmatter:
+              layer:      { type: string, required: true, const: component }
+              depends-on: { type: string, required: false }
+          - path: dark-mode.md
+            required: false
+            frontmatter:
+              layer:      { type: string, required: true, const: dark-mode }
+              depends-on: { type: string, required: false }
+          - path: motion.md
+            required: false
+            frontmatter:
+              layer:   { type: string, required: true, const: motion }
+
+  # --- MESSAGING ---------------------------------------------------------
+  messaging:
+    required: true
+    description: |
+      Two parallel families:
+      (a) audience-targeted messaging — one file per audience segment
+      (b) channel guides — one file per delivery channel
+    directories:
+      - path: messaging/
+        contents:
+          - pattern: "for-{audience}.md"
+            required: true
+            min_files: 1
+            frontmatter:
+              audience:        { type: string, required: true,  notes: "audience slug; brand-defined taxonomy" }
+              headline:        { type: string, required: true }
+              description:     { type: string, required: true }
+              pain_point:      { type: string, required: true }
+              desired_outcome: { type: string, required: true }
+            notes: |
+              The `audience` value is brand-defined. A B2B SaaS brand
+              might use enterprise/mid-market/smb; a deal-cycle-focused
+              brand might use champion/buyer/end-user; a CPG brand might
+              use a demographic taxonomy. The pattern is universal; the
+              taxonomy is not.
+          - pattern: "channel-{channel}.md"
+            required: false
+            recommended: true
+            min_files: 1
+            frontmatter:
+              channel:         { type: string, required: true, notes: "channel slug" }
+              brand:           { type: string, required: false }
+              version:         { type: string, required: false }
+              last_updated:    { type: string, required: false }
+              status:          { type: string, required: false }
+              format:          { type: string, required: false, notes: "e.g., 'print/pdf'" }
+              primary_platform: { type: string, required: false, notes: "e.g., 'linkedin' for social" }
+              formats:         { type: array,  required: false, items: { type: string } }
+            notes: |
+              Channel slugs are brand-defined (e.g., deck, email,
+              landing-page, one-pager, social, webinar, podcast,
+              direct-mail). One file per channel the brand actively
+              publishes through.
+
+  # --- PERSONAS ----------------------------------------------------------
+  personas:
+    required: false
+    recommended: true
+    description: |
+      Detailed audience descriptions. Brands typically organize personas
+      as a matrix of {audience} × {role} — for example, a 3×3 grid of
+      three audience segments crossed with three buying-committee roles.
+      The framework file documents the matrix shape; individual persona
+      files are cells in it.
+    directories:
+      - path: personas/
+        contents:
+          - path: _framework.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:    { type: string, required: true, const: framework }
+              version: { type: string, required: false }
+            notes: "Documents the persona matrix and the role archetype definitions."
+          - pattern: "{audience}-{role}.md"
+            required: false
+            recommended: true
+            frontmatter:
+              id:       { type: string, required: true, notes: "matches filename slug" }
+              role:     { type: string, required: true, notes: "role slug from brand's role taxonomy" }
+              audience: { type: string, required: true, notes: "audience slug; SHOULD match a messaging/for-{audience}.md" }
+              label:    { type: string, required: true, notes: "human-readable persona title" }
+          - path: _archive/
+            required: false
+            notes: "deprecated personas; preserved for historical context but not ingested as live"
+
+  # --- PROOF -------------------------------------------------------------
+  proof:
+    required: false
+    recommended: true
+    description: |
+      Evidence library: proof points, competitive positioning, credentials.
+      Distinct from the data/ layer — proof/ is curated narrative; data/
+      is structured machine-readable.
+    directories:
+      - path: proof/
+        contents:
+          - path: proof-points.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:    { type: string, required: false, const: proof-library }
+              version: { type: string, required: false }
+          - path: competitive.md
+            required: false
+            frontmatter:
+              type:     { type: string, required: false, const: competitive-positioning }
+              audience: { type: string, required: false, notes: "e.g., 'internal' for sales-enablement-only" }
+              version:  { type: string, required: false }
+
+  # --- DATA --------------------------------------------------------------
+  data:
+    required: false
+    recommended: true
+    description: |
+      Pure YAML files holding machine-readable claims, registries, and
+      structured reference. Content generators pull from here so prose
+      files don't drift from canonical numbers and definitions.
+    directories:
+      - path: data/
+        contents:
+          - glob: "*.yaml"
+            required: false
+            recommended: true
+            notes: |
+              Each file is a self-describing registry, scoped to one
+              topic. Topic slugs are brand-defined (e.g., team/,
+              market/, stats/, frameworks/). The pattern — one topic per
+              file, comment header documenting the schema — is universal.
+            file_header_convention: |
+              Each YAML file SHOULD open with comment lines documenting
+              its purpose, per-entry schema, confidence-level conventions,
+              and last-updated date.
+
+  # --- PRODUCT -----------------------------------------------------------
+  product:
+    required: false
+    recommended: true
+    description: |
+      Mechanical truth about what the product/service is and how it works.
+      One file per product or product-line. Single-product brands will
+      have a single file; multi-product brands SHOULD use one file per
+      product.
+    directories:
+      - path: product/
+        contents:
+          - pattern: "{product-slug}.md"
+            required: false
+            recommended: true
+            min_files: 1
+            frontmatter:
+              title:   { type: string, required: true }
+              version: { type: string, required: false }
+              source:  { type: string, required: false, notes: "where the canonical claims came from" }
+
+  # --- EXAMPLES ----------------------------------------------------------
+  examples:
+    required: false
+    recommended: true
+    description: |
+      Reference outputs that have been human-validated. Used as few-shot
+      anchors by prompt templates and as regression checks when prompts
+      or voice change.
+    directories:
+      - path: examples/
+        contents:
+          - pattern: "{content-type}-{slug}.md"
+            required: false
+            recommended: true
+            frontmatter:
+              example_type:     { type: string, required: true, notes: "e.g., 'one-pager', 'email-sequence'" }
+              variant:          { type: string, required: false, notes: "e.g., 'vertical-specific'" }
+              target_vertical:  { type: string, required: false }
+              target_role:      { type: string, required: false }
+              files_used:       { type: array,  required: false, items: { type: string }, notes: "brand files this example was generated from" }
+              generated:        { type: string, required: false, format: date }
+              status:           { type: string, required: false, notes: "e.g., 'reference — validated by human review'" }
+
+  # --- PROMPTS -----------------------------------------------------------
+  prompts:
+    required: false
+    recommended: true
+    description: |
+      Agent brief templates — one per content type. Each prompt names the
+      brand files it expects to be attached and (when validated) the
+      examples that anchor it. Content-type slugs are brand-defined
+      (e.g., one-pager, email-sequence, deck-sales).
+    directories:
+      - path: prompts/
+        contents:
+          - pattern: "{content-type}.md"
+            required: false
+            recommended: true
+            frontmatter:
+              prompt_type:  { type: string, required: true, const: agent-brief-template }
+              content_type: { type: string, required: true, notes: "matches the prompt's content-type slug" }
+              version:      { type: string, required: false }
+              validated:    { type: boolean, required: false, notes: "true when at least one example exists and passed human review" }
+              examples:     { type: array,  required: false, items: { type: string }, notes: "paths to examples/ files that anchor this prompt" }
+
+  # --- DESIGN SPECS ------------------------------------------------------
+  design_specs:
+    required: false
+    description: |
+      Open design questions and channel-specific asset specs that don't
+      fit cleanly in design-tokens.md (which is canonical) or in a channel
+      guide (which is copy-focused).
+    directories:
+      - path: design/
+        contents:
+          - glob: "*.md"
+            required: false
+            frontmatter:
+              type:   { type: string, required: false, notes: "e.g., 'design-spec'" }
+              status: { type: string, required: false, notes: "'open' = work-in-progress; 'closed' = resolved" }
+              area:   { type: string, required: false, notes: "e.g., 'social', 'email'" }
+
+  # --- META --------------------------------------------------------------
+  meta:
+    required: false
+    description: "Repo-level meta files. Not ingested as brand content."
+    files:
+      - path: README.md
+        required: true
+        notes: "human-facing repo overview; SHOULD link to brand-spec"
+      - path: HANDOFF.md
+        required: false
+        notes: "session handoff for human/agent collaborators"
+
+# -----------------------------------------------------------------------------
+# Validation rules (cross-layer)
+# -----------------------------------------------------------------------------
+
+validation:
+  - id: identity-required
+    rule: "identity.md MUST exist with frontmatter.slug and frontmatter.name"
+  - id: voice-required
+    rule: "voice.md MUST exist"
+  - id: vocabulary-required
+    rule: "vocabulary.md MUST exist (frontmatter MAY be empty)"
+  - id: design-tokens-required
+    rule: "design-tokens.md MUST exist; assets/ directory MUST exist with _manifest.md"
+  - id: messaging-audience-min
+    rule: "At least one messaging/for-{audience}.md MUST exist"
+  - id: persona-audience-coverage
+    rule: |
+      For every persona file with frontmatter.audience = X, a
+      messaging/for-X.md SHOULD exist. (Warning, not error.)
+  - id: prompt-example-when-validated
+    rule: |
+      Any prompts/{x}.md with frontmatter.validated = true MUST list at
+      least one path under examples in frontmatter.examples, and each
+      listed example file MUST exist.
+  - id: ui-tokens-layer-order
+    rule: |
+      If ui-tokens/semantic.md exists, ui-tokens/primitives.md MUST exist.
+      If ui-tokens/component.md exists, ui-tokens/semantic.md MUST exist.
+  - id: frontmatter-parses
+    rule: "Every frontmatter block (between --- markers) MUST be valid YAML."
+  - id: data-files-yaml
+    rule: "Every file under data/ MUST be valid YAML."
+  - id: agent-context-priority-layers-resolve
+    rule: |
+      If agent-context.md exists, every entry in
+      frontmatter.priority_layers MUST name a layer declared in this
+      schema's `layers:` block.
