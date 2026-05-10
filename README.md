@@ -301,7 +301,11 @@ These are real gaps observed during the v1 reverse-engineering. They are intenti
 
 ## Contributing
 
-See [`CONTRIBUTING.md`](./CONTRIBUTING.md). Schema changes require a version bump. Discuss larger changes in an issue first.
+See [`CONTRIBUTING.md`](./CONTRIBUTING.md). Schema changes require a version bump per the policy in [`VERSIONING.md`](./VERSIONING.md) — default to patch bumps; minor and major bumps require justification. Discuss larger changes in an issue first.
+
+## Versioning
+
+[`VERSIONING.md`](./VERSIONING.md) documents what counts as patch / minor / major for this schema. The short version: additive changes are patches, new capability domains are minor bumps, breaking changes are major bumps. Default to patch.
 
 ## License
 
