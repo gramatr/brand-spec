@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.6.0
+contract_version: 1.6.1
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -595,7 +595,30 @@ layers:
   # --- DESIGN TOKENS -----------------------------------------------------
   design:
     required: true
-    description: "Visual system: colors, typography, modes, logo references."
+    description: |
+      Visual system: colors, typography, modes, logo references. Also
+      the home for design specs that don't fit cleanly in
+      `design-tokens.md` (channel-specific specs, photography
+      treatment, and — as of v1.6.1 — iconography conventions).
+
+      (v1.6.1) Optional `design/iconography.md` extends this layer
+      with iconography conventions: which icon set the brand uses,
+      sizing tokens, color treatment, stroke vs fill, spacing, and
+      one-set exceptions. When the brand has custom icons, the
+      optional `design/icons/` directory holds the source files
+      alongside a `_manifest.md` describing each. The iconography
+      file is recommended-not-required; brands without a UI surface
+      or without icon discipline MAY skip it cleanly.
+
+      Decorative-vs-functional distinction. Decorative or gradient
+      "icons" that read as brand imagery (e.g., section-decoration
+      gradient SVGs on a marketing site) belong in
+      `assets/_manifest.md` and are governed by the assets layer.
+      Functional UI icons that participate in the icon system
+      (navigation, actions, status, in-product chrome) belong in
+      `design/iconography.md`. Brands SHOULD document the
+      distinction explicitly when both are present. See validation
+      rule `iconography-decorative-distinction-recommended`.
     files:
       - path: design-tokens.md
         required: true
@@ -689,6 +712,166 @@ layers:
       - path: fonts/
         required: false
         notes: "self-hosted typeface files; license file (e.g., OFL-*.txt) MUST accompany"
+    additional_files:
+      - path: design/iconography.md
+        required: false
+        recommended: true
+        added_in: 1.6.1
+        frontmatter:
+          type:           { type: string,  required: true,  const: iconography }
+          version:        { type: string,  required: false }
+          status:         { type: string,  required: false }
+          last_updated:   { type: string,  required: false, format: date, notes: "YYYY-MM-DD" }
+          confidence:     { type: string,  required: false, enum: [high, medium, low] }
+          icon_set:
+            type: object
+            required: true
+            notes: |
+              The canonical icon set the brand uses. Captures NAME and
+              VERSION so downstream tools (and AI agents) know exactly
+              which library to render against. When the brand uses a
+              custom icon system, set `name: custom` and document the
+              source files under `design/icons/`.
+            properties:
+              name:
+                type: string
+                required: true
+                notes: |
+                  Set name. Common values: `lucide`, `material-symbols`,
+                  `heroicons`, `phosphor`, `tabler`, `feather`, `custom`.
+                  Brands MAY use any value; the field is informational.
+              version:
+                type: string
+                required: false
+                notes: "Set version (e.g., `0.300.0`). Recommended when the upstream library is versioned."
+              variant:
+                type: string
+                required: false
+                notes: "Optional sub-set indicator (e.g., `outlined`, `rounded`, `sharp` for material-symbols)."
+          set_authority:
+            type: string
+            required: false
+            notes: "URL to the canonical source for the icon set (library homepage, registry, or vendor docs)."
+          color_treatment:
+            type: string
+            required: true
+            enum: [monochrome, brand-color, functional, mixed-with-rules]
+            notes: |
+              How icons are colored across the brand.
+              `monochrome` = always one color (typically a neutral).
+              `brand-color` = always a brand primary or accent.
+              `functional` = semantic colors per role (success/warning/
+              danger/info follow design-tokens semantic palette).
+              `mixed-with-rules` = brand uses several treatments;
+              body documents which applies when.
+          stroke_vs_fill:
+            type: string
+            required: false
+            enum: [stroke, fill, mixed]
+            notes: |
+              Whether the brand uses stroke (line) or fill (solid)
+              icons predominantly. `mixed` = brand uses both with
+              documented rules in body.
+          sizing:
+            type: object
+            required: false
+            notes: |
+              Named icon sizes keyed by t-shirt slug (`xs`, `sm`,
+              `md`, `lg`, `xl`, etc.) mapped to design-token names.
+              The sizing tokens themselves MUST be declared in
+              `design-tokens.md` (or, when present, in `ui-tokens/`);
+              this field references them by name. The hex/px value
+              is never redeclared here. See validation rule
+              `iconography-sizing-references-resolve`.
+            properties:
+              xs: { type: string, required: false, notes: "design-token name (e.g., `--icon-size-xs`)" }
+              sm: { type: string, required: false }
+              md: { type: string, required: false }
+              lg: { type: string, required: false }
+              xl: { type: string, required: false }
+          spacing:
+            type: object
+            required: false
+            notes: |
+              Clear-space rules around icons (analogous to wordmark
+              clear-space in `assets/_manifest.md`). Values reference
+              design-tokens by name when possible; numeric pixel
+              values are acceptable when no token applies.
+          exceptions:
+            type: array
+            required: false
+            items:
+              type: object
+              properties:
+                set:       { type: string, required: true,  notes: "exception set name (e.g., `material-symbols`)" }
+                use_case:  { type: string, required: true,  notes: "where the exception applies (e.g., `product-specific actions in app chrome`)" }
+                reason:    { type: string, required: true,  notes: "why the exception is justified" }
+            notes: |
+              Declared exceptions to the one-set rule. Most brands
+              SHOULD use one icon set for consistency; some (e.g.,
+              brands layering a product-specific custom set on top of
+              a general-purpose library) declare exceptions here with
+              a stated reason. The validator does not enforce
+              one-set; the array is documentation-only.
+        body_sections_recommended:
+          - "Icon set choice and rationale"
+          - "Sizing scale"
+          - "Color treatment"
+          - "Stroke vs fill"
+          - "Spacing and clear-space"
+          - "Exceptions (when a second set is allowed)"
+          - "Decorative vs functional (distinction with assets/_manifest.md)"
+          - "How AI agents and downstream tools consume this layer"
+        notes: |
+          (v1.6.1) Iconography conventions for the brand. Recommended
+          for brands with any UI surface (web app, marketing site
+          with iconography, deck templates with icons); MAY be
+          omitted by brands without icon discipline.
+
+          The file documents the FUNCTIONAL/UI icon system. Decorative
+          or gradient icons that read as brand imagery belong in
+          `assets/_manifest.md`. When both are present, this file
+          SHOULD include a "Decorative vs functional" section
+          spelling out which assets fall on which side of the line.
+
+          Sizing tokens are referenced from `design-tokens.md` (or
+          `ui-tokens/` when present), never redeclared. Color
+          tokens are likewise referenced. See validation rules
+          `iconography-sizing-references-resolve` and
+          `iconography-set-resolves`.
+    additional_directories:
+      - path: design/icons/
+        required: false
+        added_in: 1.6.1
+        notes: |
+          (v1.6.1) Source files for custom brand icons. Required only
+          when `design/iconography.md` declares `icon_set.name: custom`
+          (or any other non-public set name that requires the brand to
+          ship its own files). Lives alongside `iconography.md` —
+          keeps icon-system docs and source files together. NOT in
+          `assets/icons/`; the assets layer is for brand imagery
+          (logos, decorative graphics, photography), not iconography
+          system files. See validation rule `iconography-set-resolves`.
+        contents:
+          - path: _manifest.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:         { type: string,  required: true,  const: icon-manifest }
+              version:      { type: string,  required: false }
+              last_updated: { type: string,  required: false, format: date }
+              icons:
+                type: array
+                required: false
+                notes: |
+                  Per-icon manifest entries. Each entry SHOULD
+                  declare `filename`, `category` (e.g., `navigation`,
+                  `action`, `status`), `intended_use` (1 sentence),
+                  and `alt_text_default` (default accessible label
+                  for downstream tools).
+            notes: "Analogous to `assets/_manifest.md` but scoped to the custom icon set."
+          - { glob: "*.svg",      required: false, notes: "preferred — vector source for icons" }
+          - { glob: "*.png|*.jpg", required: false, notes: "raster fallback when SVG is unavailable" }
 
   # --- UI TOKENS (three-layer system) ------------------------------------
   ui_tokens:
@@ -2147,3 +2330,44 @@ validation:
       Informational — a brand that ships only
       `image-generation/negative-prompts.md` for runtime consumption
       MAY omit the framework file.
+
+  - id: iconography-set-resolves
+    severity: info
+    rule: |
+      (v1.6.1) When `design/iconography.md` declares
+      `icon_set.name: custom` (or any value indicating a
+      brand-provided set), the `design/icons/` directory SHOULD
+      exist with at least one icon file and a `_manifest.md`
+      describing the set. When `icon_set.name` references a
+      well-known public library (e.g., `lucide`, `material-symbols`,
+      `heroicons`), no local files are required — the library is
+      the source of truth and downstream tools fetch it from the
+      upstream registry. Informational — brands MAY ship a
+      `_manifest.md` listing of the public-library icons they
+      actually use without shipping source files.
+
+  - id: iconography-sizing-references-resolve
+    severity: warn
+    rule: |
+      (v1.6.1) When `design/iconography.md` declares a `sizing:`
+      frontmatter block, every value MUST be a token name that
+      resolves to a token defined in `design-tokens.md` or, when
+      present, in a file under `ui-tokens/`. The iconography file
+      assigns icon sizes to existing tokens; it MUST NOT redeclare
+      px or rem values. Mirrors the v1.5
+      `data-viz-color-tokens-resolve` rule and the v1.6
+      `image-gen-design-token-references-resolve` rule.
+
+  - id: iconography-decorative-distinction-recommended
+    severity: info
+    rule: |
+      (v1.6.1) When a brand has both functional iconography
+      (`design/iconography.md`) AND decorative or gradient icons
+      documented in `assets/_manifest.md`, the iconography file
+      SHOULD include a "Decorative vs functional" body section
+      that explicitly draws the line. The distinction prevents
+      downstream tools (and AI agents) from treating decorative
+      gradient SVGs as members of the icon system, and from
+      treating functional UI icons as brand imagery.
+      Informational — brands with only one of the two surfaces
+      MAY omit the section.

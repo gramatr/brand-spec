@@ -4,6 +4,174 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.6.1] — 2026-05-10
+
+Closes Phase 2 sub-issue
+[`gramatr/brand-spec#25`](https://github.com/gramatr/brand-spec/issues/25)
+of the brand-spec coverage epic
+[`#13`](https://github.com/gramatr/brand-spec/issues/13). Addresses
+gap #3 from audit
+[`#12`](https://github.com/gramatr/brand-spec/issues/12) — iconography
+systems were recommended-but-missing across all 3 brands.
+
+Semver justification: **PATCH bump (per `VERSIONING.md`).** Extension
+of the existing `design/` layer with optional fields and an optional
+sibling directory (`design/icons/`) — not a new top-level layer and
+not a new capability domain. The policy gives "additive optional
+fields, new conventions" and "new validation rule that emits `info`
+or `warn` only" as canonical patch examples; this release matches
+both. The lone `warn`-severity rule
+(`iconography-sizing-references-resolve`) only triggers when a brand
+populates the new optional `sizing:` block, so v1.6.0 brands cannot
+regress. No new top-level layer, no required field added, no enum
+tightened, no existing field renamed or removed. v1.6.0 brands
+(NEXT90, gramatr-brand, lean-media-brand) validate cleanly against
+v1.6.1 with zero modifications — none currently has
+`design/iconography.md` and the file is `recommended: true,
+required: false`.
+
+The release also formalizes the **decorative-vs-functional
+distinction** so brands and downstream tools have a clean way to
+classify ambiguous "icon-shaped" assets:
+
+- **Decorative or gradient icons** that read as brand imagery
+  (e.g., section-decoration gradient SVGs on a marketing site) live
+  in `assets/_manifest.md` and are governed by the assets layer.
+- **Functional UI icons** that participate in the icon system
+  (navigation, actions, status, in-product chrome) live in
+  `design/iconography.md`.
+
+Real-world test case (lean-media-brand): the live site carries five
+`custom-icon_*-grad.svg` files (audience, farm characteristics,
+location, Venn diagram) as section-decoration gradient SVGs. They are
+brand imagery — decorative, brand-tinted, not part of any sizing or
+spacing system. They belong in `assets/_manifest.md` (and lean-media
+already documents them there as "brand-tinted gradient icons" outside
+the wordmark logo set). Lean-media also has implicit functional
+iconography (a favicon at minimum, plus any future UI surface) — that
+lands in a new `design/iconography.md` when the brand adopts the
+extension.
+
+### Added
+
+- **`design/iconography.md` (issue #25, Gap 3 from #12).** Optional
+  file extending the existing `design/` layer. Frontmatter:
+    - `icon_set:` (required when file present) — object with `name`
+      (e.g., `lucide`, `material-symbols`, `heroicons`, `phosphor`,
+      `tabler`, `feather`, `custom`), optional `version`, optional
+      `variant`.
+    - `set_authority:` (optional) — URL to the canonical source.
+    - `color_treatment:` (required) — enum
+      `monochrome` | `brand-color` | `functional` | `mixed-with-rules`.
+    - `stroke_vs_fill:` (optional) — enum `stroke` | `fill` | `mixed`.
+    - `sizing:` (optional) — named t-shirt sizes (`xs`/`sm`/`md`/
+      `lg`/`xl`) mapped to design-token names. Sizing tokens MUST
+      be declared in `design-tokens.md` (or `ui-tokens/`); this
+      block REFERENCES them by name. Hex/px values are never
+      redeclared here.
+    - `spacing:` (optional) — clear-space rules around icons.
+      References design-tokens by name where possible.
+    - `exceptions:` (optional array) — declared exceptions to the
+      one-set rule with `set`, `use_case`, `reason`. Documentation
+      only; the validator does not enforce one-set.
+  Body sections recommended cover icon set choice, sizing scale,
+  color treatment, stroke vs fill, spacing/clear-space, exceptions,
+  decorative-vs-functional distinction, and how downstream tools
+  consume the layer.
+
+- **`design/icons/` directory (optional).** When the brand ships
+  custom icons, source files live here alongside `iconography.md`
+  (NOT in `assets/icons/` — keeps icon-system docs and source files
+  together). Carries an optional `_manifest.md` analogous to
+  `assets/_manifest.md`, with per-icon `filename`, `category`,
+  `intended_use`, `alt_text_default` records.
+
+- **Decorative-vs-functional distinction (documented).** The
+  `design/` layer description now spells out which side of the line
+  a given asset falls on: decorative or gradient "icons" that read
+  as brand imagery → `assets/_manifest.md`; functional UI icons that
+  participate in the icon system → `design/iconography.md`. Brands
+  SHOULD document the distinction explicitly when both surfaces are
+  present.
+
+- **Validation rules (3 new):**
+    - `iconography-set-resolves` (info) — when
+      `icon_set.name: custom` (or another brand-provided set), the
+      `design/icons/` directory SHOULD exist with at least one icon
+      file and a `_manifest.md`. Public libraries (lucide,
+      material-symbols, heroicons, etc.) need no local files; the
+      library is the source of truth.
+    - `iconography-sizing-references-resolve` (warn) — every value
+      in `sizing:` MUST be a token name that resolves to a token
+      defined in `design-tokens.md` or, when present, in
+      `ui-tokens/`. The iconography file assigns sizes to existing
+      tokens; it MUST NOT redeclare px or rem. Mirrors the v1.5
+      `data-viz-color-tokens-resolve` and v1.6
+      `image-gen-design-token-references-resolve` rules.
+    - `iconography-decorative-distinction-recommended` (info) —
+      when both functional iconography and decorative or gradient
+      icons exist in a brand, `iconography.md` SHOULD include a
+      "Decorative vs functional" body section spelling out which
+      assets fall on which side.
+
+- **`templates/empty-brand/design/iconography.md`** — worked
+  example using Lucide as the icon set choice. Demonstrates the
+  full convention: required and optional frontmatter fields with
+  inline comments, the recommended body sections, and the
+  decorative-vs-functional distinction stated explicitly.
+
+### Changed
+
+- `contract_version` bumped to `1.6.1`.
+- `design:` layer description in `brand.yaml` extended with a
+  paragraph documenting the iconography file convention and a
+  paragraph documenting the decorative-vs-functional distinction.
+- `README.md` updated: new "What's new in v1.6.1" section above
+  the v1.6 section.
+
+### Backward compatibility
+
+- v1.6.0 brands (NEXT90, gramatr-brand, lean-media-brand) validate
+  cleanly against v1.6.1 with zero modifications. None currently
+  has `design/iconography.md` and the file is `recommended: true,
+  required: false`. Lean-media's existing documentation of its
+  decorative gradient SVGs in `assets/_manifest.md` is already
+  spec-conforming under the new distinction (no edits needed).
+- No required field added to any existing layer.
+- No enum tightened, no existing field renamed or removed.
+- The three new validation rules trigger only when a brand
+  populates `design/iconography.md`; brands without the file see
+  no new warnings or errors. The
+  `iconography-decorative-distinction-recommended` rule fires only
+  when BOTH the iconography file AND decorative-icon entries in
+  `assets/_manifest.md` exist, so it cannot warn against any
+  existing brand today.
+
+### Out of scope (deferred)
+
+- **First-adopter brand population.** lean-media-brand is the
+  natural first adopter — it already has the decorative-side
+  documented (gradient SVGs in `assets/_manifest.md`) and an
+  implicit functional iconography surface (favicon plus any future
+  UI) waiting to be declared. The first-adopter PR
+  (lean-media-brand populates `design/iconography.md`, references
+  the existing decorative entries to make the distinction
+  explicit) will be filed as a follow-up sub-issue under epic #13.
+- **Per-icon SVG validation.** Walking custom icon files for
+  consistency (single stroke width, viewbox, etc.) is downstream
+  tooling territory, not brand-spec validation surface.
+- **Icon usage analytics.** Cross-referencing which icons a brand
+  actually uses across `examples/`, `prompts/`, and `messaging/` is
+  v2 territory if it ever lands.
+- **Validator implementation of the new rules.** The reference
+  validator (`gramatr/brand-spec-validator`) picks up v1.6.1 on
+  the next maintainer-triggered spec-sync run. The two info-
+  severity rules are straightforward presence checks; the
+  `iconography-sizing-references-resolve` warn rule shares shape
+  with the v1.5 `data-viz-color-tokens-resolve` and v1.6
+  `image-gen-design-token-references-resolve` rules and reuses
+  that implementation pattern.
+
 ## [1.6.0] — 2026-05-10
 
 Closes Phase 2 sub-issue
