@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.2.1
+contract_version: 1.3.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -137,6 +137,65 @@ conventions:
   reserved_prefixes:
     underscore: "files/dirs starting with _ are framework, archive, or manifest — not content instances"
 
+  # (v1.3) Canonical baseline for `applies_to` channel slugs on register
+  # files (issue #8 item 2). Brands MAY extend with brand-specific slugs
+  # (e.g., `linkedin-brian-handle`, `linkedin-company-page`,
+  # `pricing-page`). The baseline exists so validators can warn on drift
+  # (`email` vs `marketing-email` vs `marketing-emails`); it does not
+  # error on unknown slugs in v1.3 — full controlled-vocabulary
+  # enforcement is v2 territory.
+  applies_to_baseline_slugs:
+    notes: |
+      Baseline kebab-case channel/context slugs observed across
+      production brands. Use the baseline form when a baseline form
+      exists; declare brand-specific slugs only when the surface is
+      genuinely brand-specific (a named handle, a named landing page).
+    web_and_owned:
+      - website
+      - blog
+      - landing-pages
+      - pricing-page
+      - proof-page
+      - about-page
+      - changelog
+    sales:
+      - sales-decks
+      - one-pagers
+      - sales-conversations
+      - gated-assets
+      - case-studies
+      - white-papers
+    email:
+      - marketing-emails       # canonical form; NOT `email` or `marketing-email`
+      - transactional-emails
+      - lifecycle-emails
+      - newsletter
+    paid:
+      - paid-search
+      - paid-social
+      - display-ads
+    social:
+      - linkedin-company-page
+      - linkedin-personal-handle
+      - twitter
+      - instagram
+      - facebook
+      - tiktok
+      - youtube
+    technical:
+      - code-comments
+      - agent-prompts
+      - technical-docs
+      - github-issues
+      - error-messages
+      - cli-output
+      - readmes
+    long_form:
+      - blog-posts
+      - founder-guest-articles
+      - podcast-intro-outro
+      - webinar-scripts
+
 # -----------------------------------------------------------------------------
 # Layers
 # -----------------------------------------------------------------------------
@@ -255,15 +314,60 @@ layers:
               `voice/` directory exists. Lists the registers and
               documents when each applies (channel/context coverage,
               precedence rules when multiple could apply).
+
+              (v1.3) MAY include an optional `precedence:` frontmatter
+              block (issue #8 item 7) — the validator-friendly equivalent
+              of the prose "Precedence when contexts overlap" section
+              both real-world brands document today. When both prose and
+              frontmatter are present, the frontmatter block is the
+              machine-readable canonical form and the prose is
+              human-facing commentary; they MUST agree.
+            frontmatter:
+              precedence:
+                type: object
+                required: false
+                notes: |
+                  (v1.3) Optional cross-register precedence declaration
+                  for surfaces matched by multiple registers'
+                  `applies_to` lists. Either provide `default_order`
+                  (a register-slug array, highest-priority first) for
+                  blanket ordering, or `surface_overrides` (a map from
+                  surface slug to the register slug that wins for that
+                  surface), or both. Validators SHOULD verify each
+                  named register slug resolves to an existing
+                  `voice/registers/<slug>.md`.
+                properties:
+                  default_order:
+                    type: array
+                    required: false
+                    items: { type: string }
+                    notes: "Register slugs in winning order, e.g., [founder-byline, marketing, engineering]."
+                  surface_overrides:
+                    type: object
+                    required: false
+                    notes: |
+                      Map of surface slug → winning register slug, e.g.,
+                      `{ "linkedin-brian-handle": "founder-byline",
+                         "linkedin-company-page": "marketing" }`.
+                      Use this when default_order would resolve the
+                      wrong way for specific named surfaces.
           - path: _index.md
             required: false
-            notes: "Alternative to README.md; same purpose."
+            notes: "Alternative to README.md; same purpose. Same v1.3 `precedence:` frontmatter convention applies."
           - pattern: "registers/{register-slug}.md"
             required: false
             min_files: 1
             notes: |
               At least one register file MUST exist when the multi-register
               pattern is used.
+
+              (v1.3) Register files SHOULD declare corpus metadata
+              (`corpus_size`, `corpus_source`, `corpus_pulled`,
+              `confidence`) when the register's rules are derived from
+              an analyzed corpus. Two real-world brands (lean-media-brand,
+              gramatr-brand) added these ad-hoc to per-register
+              frontmatter — v1.3 formalizes them. See
+              `corpus-metadata-recommended` validation rule.
             frontmatter:
               register:    { type: string, required: true, notes: "register slug; matches filename" }
               applies_to:
@@ -275,15 +379,122 @@ layers:
                   (e.g., `[website, blog, marketing-emails]` for
                   corporate; `[code-comments, agent-prompts, technical-docs]`
                   for engineering).
+
+                  (v1.3) Slugs are kebab-case strings. A canonical
+                  baseline list is documented in
+                  `conventions.applies_to_baseline_slugs` below; brands
+                  MAY extend with brand-specific slugs (e.g.,
+                  `linkedin-company-page`, `linkedin-brian-handle`).
+                  Validators SHOULD warn — not error — on slugs not in
+                  the baseline list to surface drift like `email` vs
+                  `marketing-email` vs `marketing-emails`. Enforcement
+                  is convention-only in v1.3; richer taxonomy is v2.
               default_tone:   { type: string, required: false, notes: "e.g., 'confident-direct'" }
               reading_level:  { type: string, required: false, notes: "e.g., 'professional'" }
               perspective:    { type: string, required: false, enum: [first-person, second-person, third-person] }
+              # --- (v1.3) Corpus metadata fields (issue #8 item 1) ----------
+              corpus_size:
+                type: integer
+                required: false
+                notes: |
+                  (v1.3) Number of source samples analyzed to derive
+                  this register's rules (e.g., `11` for an 11-post
+                  LinkedIn corpus). Optional but SHOULD be present when
+                  the register was authored from a corpus.
+              corpus_source:
+                type: string
+                required: false
+                notes: |
+                  (v1.3) Where the samples came from — URL, repo path,
+                  filesystem path, or free-text description (e.g.,
+                  `"linkedin.com/company/<slug>"`,
+                  `"website-repo/src/content/blog/01-12 + LinkedIn handle"`).
+              corpus_pulled:
+                type: string
+                format: date
+                required: false
+                notes: |
+                  (v1.3) ISO date `YYYY-MM-DD` — when the corpus was
+                  analyzed. Decay signal for downstream agents: a 12-
+                  month-old corpus on a fast-moving channel is a weaker
+                  evidence base than one pulled this week.
+              confidence:
+                type: string
+                required: false
+                enum: [high, medium, low]
+                notes: |
+                  (v1.3) Author's confidence in the register's rules
+                  given corpus quality and size. `high` = stable rules
+                  backed by clear corpus signal; `medium` = some rules
+                  inferred from thin corpus; `low` = provisional, do
+                  not over-index.
+              # --- (v1.3) Quoted-voice exemption flag (issue #8 item 4) -----
+              contains_quoted_voices:
+                type: boolean
+                required: false
+                notes: |
+                  (v1.3) When `true`, signals to validators and
+                  drift-detection tooling that the file or generated
+                  content under this register MAY include quoted
+                  third-party voices (e.g., employee Q&A in a Team
+                  Member Spotlight, Hacker News quote in a founder
+                  byline) that should not be evaluated against this
+                  register's voice rules. Default when omitted is
+                  `false`. See also the `> Quoted: <attribution>`
+                  markdown callout convention below for inline use.
+              # --- (v1.3) Platform overlays (issue #8 item 8) --------------
+              platform_overlays:
+                type: object
+                required: false
+                notes: |
+                  (v1.3) Optional platform-specific conventions when a
+                  register applies to multiple platforms with distinct
+                  rendering or convention needs (e.g., a `founder-byline`
+                  register that covers both blog and LinkedIn). Keys are
+                  platform slugs (`linkedin`, `twitter`, `blog`,
+                  `email`); values are free-form objects whose shape is
+                  brand-defined but SHOULD include rendered conventions
+                  (hashtag stacks, emoji budgets, divider conventions,
+                  CTA permissions). Brands MAY also document overlays
+                  as an H2 section (see `body_sections_recommended`
+                  below — `On {Platform}`); the frontmatter form is the
+                  validator-friendly canonical home, the H2 form is the
+                  author-friendly equivalent. Either is acceptable in
+                  v1.3.
             body_sections_recommended:
+              # (v1.3) Body section guidance now covers register inheritance
+              # (issue #8 items 5 and 9). The "What the Voice Is NOT" section
+              # is the canonical shape for the primary register; for any
+              # register beyond the primary, the cleaner shape is the two
+              # inheritance-aware sections shown below. The
+              # "What does NOT fit this register" section is recommended for
+              # all registers to capture explicit drift-detection
+              # negative-space documentation (outliers, cut posts, surfaces
+              # that look on-register but are not).
               - "Core Characterization"
               - "Voice Attributes"
-              - "What the Voice Is NOT"
+              - "What the Voice Is NOT"                            # primary register — canonical
+              - "What this register allows that {primary} does not" # secondary registers — additive scope
+              - "What is still forbidden (inherited)"               # secondary registers — inheritance reminder
+              - "On {Platform}"                                     # (v1.3) optional H2 overlay equivalent of platform_overlays frontmatter
+              - "What does NOT fit this register"                   # (v1.3) drift-detection negative-space
               - "Tone Rules"
               - "Published Voice Examples"
+            quoted_voice_callout_convention: |
+              (v1.3) Inline quoted-voice convention (issue #8 item 4).
+              Within a register file or generated artifact, a quoted
+              third-party voice MAY be wrapped in a markdown blockquote
+              prefixed with `> Quoted: <attribution>` on its own line
+              before the quoted content. Validators and drift-detection
+              tooling SHOULD skip voice/vocabulary evaluation of the
+              blockquote body and resume on the next non-blockquote
+              line. Example:
+                  > Quoted: Wade Gilmer, employee anniversary spotlight
+                  > "Six years here and the work still surprises me."
+              Use this for short inline quotes; use
+              `contains_quoted_voices: true` frontmatter when an entire
+              file's body is built around quoted voices (e.g., a Q&A
+              spotlight post).
 
   # --- VOCABULARY --------------------------------------------------------
   vocabulary:
@@ -799,3 +1010,116 @@ validation:
     rule: |
       Every entry in a ui-tokens file's frontmatter.depends-on array
       MUST name a sibling file under ui-tokens/ that exists.
+
+  # ---------------------------------------------------------------------
+  # (v1.3) New validation rules — issue #8 closure
+  # ---------------------------------------------------------------------
+
+  - id: corpus-metadata-recommended
+    severity: warn
+    rule: |
+      (v1.3, issue #8 item 1) Register files under `voice/registers/`
+      that derive their rules from an analyzed corpus SHOULD declare
+      `corpus_size`, `corpus_source`, `corpus_pulled`, and `confidence`
+      in frontmatter. Validators SHOULD warn when a register file is
+      missing `corpus_pulled` or `confidence` (the two highest-signal
+      fields). Not an error — registers authored top-down (no corpus
+      yet) MAY omit. When `confidence: low` is declared, downstream
+      generators SHOULD treat the register's rules as provisional.
+
+  - id: corpus-pulled-freshness-warn
+    severity: warn
+    rule: |
+      (v1.3, issue #8 item 1) When a register file declares
+      `corpus_pulled`, validators SHOULD warn if the date is older
+      than 365 days. Voice corpora decay; a year-old social-channel
+      corpus on a fast-moving platform is a weak evidence base.
+
+  - id: applies-to-baseline-warn
+    severity: warn
+    rule: |
+      (v1.3, issue #8 item 2) Each entry in a register file's
+      `applies_to` array SHOULD either match a slug in
+      `conventions.applies_to_baseline_slugs` or be a kebab-case
+      brand-specific slug (containing a brand-named surface, e.g.,
+      `linkedin-brian-handle`). Validators SHOULD warn on slugs that
+      look like baseline drift (e.g., `email`, `marketing-email`
+      where `marketing-emails` is the canonical baseline form).
+      Enforcement is convention-only in v1.3; full controlled-
+      vocabulary enforcement is v2.
+
+  - id: register-inheritance-cannot-subtract
+    severity: error
+    rule: |
+      (v1.3, issue #8 items 3 and 6) Registers ADD permissions; they
+      MUST NOT subtract brand-wide constraints. Specifically: any
+      term listed under the "Forbidden Terms" section of
+      `vocabulary.md` MUST NOT appear as an explicitly-allowed term
+      in any register file (e.g., a register MUST NOT contain text
+      such as `"revolutionary" is allowed in this register` when
+      `revolutionary` is on the brand-wide forbidden list).
+      Validators detect this by scanning each register file for
+      forbidden terms occurring inside an "allowed" / "permitted" /
+      "what this register allows" body section. Forbidden terms
+      occurring inside a `> Quoted: <attribution>` callout, inside a
+      "Published Voice Examples" quote block, or inside a "What does
+      NOT fit this register" section are ignored (those contexts are
+      illustrative, not register-permissive).
+
+  - id: register-inheritance-doc-recommended
+    severity: warn
+    rule: |
+      (v1.3, issue #8 item 5) Any register file beyond the primary
+      SHOULD include both a "What this register allows that
+      {primary} does not" section and a "What is still forbidden
+      (inherited)" section so the inheritance contract is explicit.
+      The primary register is whichever register is listed first in
+      `voice/README.md` precedence (or the first `applies_to:
+      [website, ...]` register when no precedence is declared).
+      Warning only; brands MAY use other section shapes.
+
+  - id: quoted-voice-callout-skipped
+    severity: info
+    rule: |
+      (v1.3, issue #8 item 4) Validators MUST skip vocabulary and
+      voice-rule evaluation of any markdown blockquote whose first
+      line matches `> Quoted: <attribution>` (case-insensitive on
+      "Quoted"). The skip terminates at the first non-blockquote
+      line. When a register file declares
+      `contains_quoted_voices: true` in frontmatter, validators MAY
+      relax voice/vocabulary enforcement on the entire file body
+      (the file author has signaled the file is a quote-construction
+      surface).
+
+  - id: precedence-references-resolve
+    severity: error
+    rule: |
+      (v1.3, issue #8 item 7) Every register slug listed in
+      `voice/README.md` (or `voice/_index.md`) frontmatter
+      `precedence.default_order` or as a value in
+      `precedence.surface_overrides` MUST resolve to an existing
+      file at `voice/registers/<slug>.md`.
+
+  - id: platform-overlay-keys-recommended
+    severity: warn
+    rule: |
+      (v1.3, issue #8 item 8) When a register file declares
+      `platform_overlays:` in frontmatter, the keys SHOULD be
+      kebab-case platform slugs (`linkedin`, `twitter`, `blog`,
+      `email`, etc.). Each value MAY be a free-form object — v1.3
+      does not constrain shape — but SHOULD include at least one of
+      `hashtag_convention`, `emoji_budget`, `divider_convention`, or
+      `cta_permission` so downstream tools know which platform
+      overlay knob is being adjusted. Equivalent H2 sections
+      (`On LinkedIn`, `On {Platform}`) in body copy are an
+      acceptable alternative when frontmatter is absent.
+
+  - id: drift-detection-section-recommended
+    severity: info
+    rule: |
+      (v1.3, issue #8 item 9) Register files SHOULD include a "What
+      does NOT fit this register" body section that documents
+      outliers, cut posts, and surfaces that look on-register but
+      are not. Drift-detection tooling reads this section to flag
+      generated content that resembles the negative-space
+      examples. Informational only — brands MAY omit.

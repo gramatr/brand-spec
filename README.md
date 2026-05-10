@@ -55,6 +55,100 @@ Body (target ≈ 2-4K tokens):
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
 
+## What's new in v1.3
+
+Nine additive schema changes surfaced by the second wave of multi-register
+voice work (`lean-media-brand` and `gramatr-brand` both shipped multi-
+register voices on top of v1.2). All nine close real gaps the brand
+authors hit; all nine are backward-compatible with v1.2.1. v1.2.1 brands
+validate cleanly against v1.3 with zero changes.
+
+1. **Corpus metadata for register frontmatter** — registers derived from
+   an analyzed corpus SHOULD declare `corpus_size`, `corpus_source`,
+   `corpus_pulled` (ISO date), and `confidence` (`high`/`medium`/`low`).
+   Two real-world brands added these ad-hoc; v1.3 formalizes them so
+   downstream agents can tell whether a register's rules are backed by
+   50 examples or 2.
+
+2. **Controlled vocabulary for `applies_to` channel slugs (baseline +
+   warn)** — `brand.yaml` now publishes a baseline list of canonical
+   kebab-case channel slugs under `conventions.applies_to_baseline_slugs`.
+   Brands MAY extend with brand-specific slugs; validators warn (do not
+   error) on slugs that look like baseline drift (`email` vs
+   `marketing-email` vs canonical `marketing-emails`). Convention-only
+   in v1.3; full taxonomy enforcement is v2 territory.
+
+3. **Register inheritance rule (formalized).** Registers ADD permissions;
+   they do NOT subtract brand-wide constraints. Both real-world brands
+   asserted this in prose under "What all registers share"; v1.3 makes
+   it a validation rule (see #6).
+
+4. **Quoted-voice exemption pattern** — two co-equal conventions: a
+   `contains_quoted_voices: true` frontmatter flag (file-level signal,
+   validator-friendly) and a `> Quoted: <attribution>` markdown
+   blockquote callout (inline, author-friendly). Validators skip
+   voice/vocabulary evaluation inside either.
+
+5. **Body section guidance for register 2+** — for any register beyond
+   the primary, the recommended body sections become "What this register
+   allows that {primary} does not" and "What is still forbidden
+   (inherited)." Documented as recommended structure, not validator-
+   enforced.
+
+6. **Vocabulary inheritance enforcement** — new validator rule
+   (`register-inheritance-cannot-subtract`, error severity): a term on
+   the `vocabulary.md` forbidden list MUST NOT appear in an "allowed"
+   body section of any register file. Forbidden terms inside `> Quoted:`
+   callouts, "Published Voice Examples" quotes, or "What does NOT fit"
+   sections are ignored (illustrative, not register-permissive).
+
+7. **Cross-register precedence (optional frontmatter block)** —
+   `voice/README.md` (or `voice/_index.md`) MAY declare a
+   `precedence:` block with `default_order` (register slugs in winning
+   order) and/or `surface_overrides` (surface slug → winning register
+   slug). Validator-friendly equivalent of the prose "Precedence when
+   contexts overlap" section both real-world brands document today.
+
+8. **Platform-overlay subsections** — when a register applies to
+   multiple platforms with distinct rendering conventions (e.g.,
+   `founder-byline` covers blog AND LinkedIn), platform-specific
+   conventions (hashtag stacks, emoji budgets, em-dash dividers, CTA
+   permissions) get a structured slot via either `platform_overlays:`
+   frontmatter or an `On {Platform}` H2 section. Either form is
+   acceptable.
+
+9. **"What does NOT fit this register" first-class section** —
+   recommended body section for explicit drift-detection negative-space
+   documentation (outliers, cut posts, surfaces that look on-register
+   but are not). Informational severity; brands MAY omit.
+
+See `brand.yaml` for the full field definitions and validation rules
+(IDs `corpus-metadata-recommended`, `corpus-pulled-freshness-warn`,
+`applies-to-baseline-warn`, `register-inheritance-cannot-subtract`,
+`register-inheritance-doc-recommended`, `quoted-voice-callout-skipped`,
+`precedence-references-resolve`, `platform-overlay-keys-recommended`,
+`drift-detection-section-recommended`). See
+`templates/multi-register-voice-example/` for a worked example
+demonstrating items 1, 5, 7, 8, 9 in use.
+
+### Brand-author summary
+
+- **Corpus metadata** — declare `corpus_size`, `corpus_source`,
+  `corpus_pulled`, `confidence` on every register file derived from a
+  corpus.
+- **Inheritance is enforced.** A register cannot un-forbid a term the
+  brand-wide `vocabulary.md` forbids. Use a `> Quoted: <attribution>`
+  callout (or `contains_quoted_voices: true` frontmatter) to legitimately
+  surface a third-party voice.
+- **Precedence and overlays are first-class slots.** Document register
+  precedence in the `voice/README.md` `precedence:` frontmatter; document
+  per-platform overlays in `platform_overlays:` (or in an `On {Platform}`
+  H2). Both real-world brands had ad-hoc prose for these; v1.3 gives them
+  structured homes.
+- **Drift-detection sections** — register files SHOULD include a "What
+  does NOT fit this register" section so generation tooling can
+  recognize negative-space examples.
+
 ## What's new in v1.2.1
 
 Two coupled additive conventions on the assets layer. Both are optional
