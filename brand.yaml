@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.4.0
+contract_version: 1.5.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -932,6 +932,300 @@ layers:
                   frontmatter shape. Authoritative data lives in
                   frontmatter; body is human-facing context.
 
+  # --- DATA-VIZ (v1.5) ---------------------------------------------------
+  data_viz:
+    required: false
+    recommended: true
+    description: |
+      (v1.5) Charting and data-visualization conventions. A canonical
+      home for the rules brands today repeat across multiple channel
+      guides: which palette role goes to which data role, when each
+      chart type is on-brand vs off-brand, axis/grid behavior,
+      annotation conventions, number-formatting rules, and table
+      styling.
+
+      This layer exists because the audit (#12) found brands documenting
+      the same chart guidance two and three times — once per channel
+      guide that ever shows a chart (deck, social, landing-page) — with
+      drift across the copies. A single canonical layer absorbs the
+      repeated prose and lets channel guides reference it.
+
+      Reference, don't redeclare. Color tokens live in `design-tokens.md`
+      and (when present) `ui-tokens/`; this layer assigns DATA ROLES to
+      those token names (e.g., "categorical-1 = `--brand-primary`,
+      categorical-2 = `--brand-secondary`"). The hex value is never
+      duplicated here. See validation rule
+      `data-viz-color-tokens-resolve`.
+
+      Per-brand chart-type policy. Brands declare their own allowed and
+      forbidden chart types in `data-viz/chart-types.md`; the spec does
+      not impose a universal list. A B2B measurement brand may forbid
+      pie charts entirely; a consumer brand may live on them. The
+      schema slot is universal; the policy is brand-defined.
+
+      Recommended, not required. Most brands benefit; small or early
+      brands MAY skip the layer entirely. When omitted, downstream
+      tooling that consumes data-viz conventions (chart generators,
+      stat-block renderers, AI agents producing data-driven slides)
+      degrades gracefully — they fall back to design-tokens for color
+      and to per-channel prose for chart guidance.
+
+      Channel-guide migration is opportunistic. Brands with chart
+      guidance duplicated across `messaging/channel-*.md` files SHOULD
+      consolidate into this layer when next revisiting those guides;
+      the channel files then reference `data-viz/` rather than
+      restating its rules. The migration is recommended-not-required —
+      brands move at their own pace.
+    directories:
+      - path: data-viz/
+        contents:
+          - path: _framework.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:         { type: string,  required: true,  const: framework }
+              version:      { type: string,  required: false }
+              status:       { type: string,  required: false }
+              last_updated: { type: string,  required: false, format: date, notes: "YYYY-MM-DD" }
+              confidence:   { type: string,  required: false, enum: [high, medium, low], notes: "author's confidence in the layer's rules; mirrors the v1.3 register confidence convention" }
+            body_sections_recommended:
+              - "What this layer covers"
+              - "When to use this layer vs design-tokens"
+              - "Relationship to channel guides"
+              - "How downstream tools consume this layer"
+            notes: |
+              Discipline-level documentation for the layer. The actual
+              rules live in the sibling files (`colors.md`,
+              `chart-types.md`, etc.); this file documents scope,
+              boundaries with adjacent layers, and how AI tooling is
+              expected to consume the layer.
+
+          - path: colors.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:         { type: string,  required: true,  const: data-viz-colors }
+              version:      { type: string,  required: false }
+              status:       { type: string,  required: false }
+              last_updated: { type: string,  required: false, format: date }
+              role_taxonomy:
+                type: string
+                required: false
+                enum: [categorical, semantic, sequential, diverging, mixed]
+                notes: |
+                  Which color-role family this brand's data viz
+                  primarily uses. `mixed` is valid (most brands use
+                  several families — categorical for series comparison,
+                  sequential for heatmaps, diverging for variance).
+                  Informational; downstream tools may use this as a
+                  hint for default chart configurations.
+            body_sections_recommended:
+              - "Color roles"
+              - "Categorical palette"
+              - "Sequential palette"
+              - "Diverging palette"
+              - "Semantic palette (positive / negative / neutral)"
+              - "Accessibility (contrast, colorblind safety)"
+              - "What never appears in a chart"
+            notes: |
+              Assigns DATA ROLES to design-token names. Example body
+              shape (canonical):
+
+                  | Role             | Token reference          |
+                  |------------------|--------------------------|
+                  | categorical-1    | `--brand-primary`        |
+                  | categorical-2    | `--brand-secondary`      |
+                  | sequential-low   | `--surface-subtle`       |
+                  | sequential-high  | `--brand-primary`        |
+                  | diverging-pos    | `--semantic-success`     |
+                  | diverging-neg    | `--semantic-error`       |
+                  | neutral-baseline | `--gray-60`              |
+
+              The hex value MUST NOT be redeclared here — the token
+              reference is the single source of truth. Validators
+              SHOULD verify each token reference resolves to a token
+              defined in `design-tokens.md` (or a `ui-tokens/` file
+              when present). See `data-viz-color-tokens-resolve`.
+
+              Color-role taxonomy: the four canonical families
+              (categorical, sequential, diverging, semantic) are
+              borrowed from established information-design practice
+              (Tableau, IBM Carbon Charts, Material Design Data Viz,
+              Observable Plot all use the same four). Brands MAY use
+              any subset; brands SHOULD NOT invent novel role names
+              without strong cause.
+
+          - path: chart-types.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:         { type: string,  required: true,  const: data-viz-chart-types }
+              version:      { type: string,  required: false }
+              status:       { type: string,  required: false }
+              last_updated: { type: string,  required: false, format: date }
+              allowed:
+                type: array
+                required: false
+                items: { type: string }
+                notes: |
+                  Kebab-case chart-type slugs the brand permits.
+                  Recommended baseline slugs: `bar`, `column`, `line`,
+                  `area`, `stacked-bar`, `stacked-column`, `scatter`,
+                  `bubble`, `pie`, `donut`, `treemap`, `heatmap`,
+                  `histogram`, `box-plot`, `waterfall`, `sankey`,
+                  `radar`, `gauge`. Brands MAY extend with
+                  brand-specific slugs (e.g., `attribution-flow`).
+              forbidden:
+                type: array
+                required: false
+                items: { type: string }
+                notes: |
+                  Chart-type slugs the brand explicitly forbids. When a
+                  per-channel guide references a chart type appearing
+                  here, the validator emits a warning. Common entries:
+                  `pie` (for brands that find pies misleading),
+                  `3d-anything` (universally discouraged), `radar`
+                  (often noisy).
+            body_sections_recommended:
+              - "Allowed chart types and when to use each"
+              - "Forbidden chart types and why"
+              - "Chart-type selection by data shape"
+              - "One-chart-per-surface rule (or exceptions)"
+            notes: |
+              Per-brand chart-type policy. The `allowed` and `forbidden`
+              arrays are the validator-readable canonical form; the
+              body sections explain the reasoning. Brands MAY declare
+              both arrays, only one, or neither (in which case the
+              policy is documented as prose only and validators do not
+              enforce chart-type selection). See
+              `data-viz-chart-type-coverage-warn`.
+
+          - path: axes-and-grid.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:         { type: string,  required: true,  const: data-viz-axes }
+              version:      { type: string,  required: false }
+              status:       { type: string,  required: false }
+              last_updated: { type: string,  required: false, format: date }
+              origin_policy:
+                type: string
+                required: false
+                enum: [always-zero, free, contextual]
+                notes: |
+                  Y-axis origin behavior. `always-zero` = bar/column
+                  charts MUST start at zero (the truthful default).
+                  `free` = origin floats to data range (acceptable for
+                  line charts on continuous variables). `contextual` =
+                  brand uses both, body documents which applies when.
+            body_sections_recommended:
+              - "Y-axis origin policy (zero vs free)"
+              - "Gridline conventions"
+              - "Tick density and label rotation"
+              - "Axis label typography"
+              - "When to suppress an axis"
+            notes: |
+              Origin behavior is the load-bearing rule here — most
+              chart-truthfulness violations are bar charts with a
+              non-zero baseline. The body SHOULD state the brand's
+              policy and the exceptions explicitly.
+
+          - path: annotations.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:                  { type: string,  required: true,  const: data-viz-annotations }
+              version:               { type: string,  required: false }
+              status:                { type: string,  required: false }
+              last_updated:          { type: string,  required: false, format: date }
+              source_citation_required:
+                type: boolean
+                required: false
+                notes: |
+                  When `true`, every annotation containing a numeric
+                  claim MUST cite a source (file path, URL, dataset
+                  reference, or `data/<topic>.yaml#<key>`). When
+                  `false` or absent, source citation is recommended
+                  but not enforced. Validators emit a warning when
+                  brands declare `true` and a downstream artifact
+                  generator omits the citation. See
+                  `data-viz-annotation-source-required`.
+            body_sections_recommended:
+              - "Big-stat (callout number) format"
+              - "Inline annotations (highlighting a value)"
+              - "Source citation conventions"
+              - "Qualifier line conventions (what / where / when)"
+              - "Annotation typography and hierarchy"
+            notes: |
+              "Big-stat" callouts (large numbers with qualifier lines)
+              are the most common annotation pattern across real
+              brands. The body SHOULD document the canonical format
+              (number size, qualifier line copy structure, source
+              placement) so chart generators and slide tools render
+              them consistently. NEXT90's pattern — number, qualifier
+              answering "compared to what / where / when," source
+              bottom-right — is one canonical shape; other brands MAY
+              use others.
+
+          - path: numbers.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:         { type: string,  required: true,  const: data-viz-numbers }
+              version:      { type: string,  required: false }
+              status:       { type: string,  required: false }
+              last_updated: { type: string,  required: false, format: date }
+              locale:
+                type: string
+                required: false
+                notes: |
+                  BCP-47 locale tag (e.g., `en-US`, `en-GB`, `de-DE`).
+                  Drives default thousands separator and decimal
+                  marker conventions. When absent, brands SHOULD
+                  document the conventions explicitly in body.
+              currency_default:
+                type: string
+                required: false
+                notes: "ISO 4217 currency code (e.g., `USD`, `EUR`). Optional."
+            body_sections_recommended:
+              - "Currency formatting"
+              - "Percentage formatting"
+              - "Large-number abbreviation (K / M / B vs scientific)"
+              - "Precision rules (decimal places by magnitude)"
+              - "Thousands separator and decimal marker"
+              - "Negative-number convention (sign vs parens)"
+              - "Date and time formatting in chart axes"
+            notes: |
+              Number formatting in data viz is stricter than general
+              body copy — a chart axis with inconsistent precision
+              looks broken in a way prose does not. This file is
+              authoritative for chart and data-table number rendering;
+              when it conflicts with general copy conventions in
+              `voice.md` or a channel guide, this file wins for
+              data-viz contexts.
+
+          - path: tables.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:         { type: string,  required: true,  const: data-viz-tables }
+              version:      { type: string,  required: false }
+              status:       { type: string,  required: false }
+              last_updated: { type: string,  required: false, format: date }
+            body_sections_recommended:
+              - "Header treatment"
+              - "Row striping (or no striping)"
+              - "Column alignment by data type"
+              - "Numeric column conventions (right-align, monospace)"
+              - "Empty-cell convention (em-dash, blank, or zero)"
+              - "Sort indicators"
+              - "Table caption and source"
+            notes: |
+              Tables sit between data-viz and prose layout. This file
+              covers tables AS data-viz artifacts (analytics tables,
+              comparison tables, results tables); general prose tables
+              follow design-tokens typography rules.
+
   # --- PROOF -------------------------------------------------------------
   proof:
     required: false
@@ -1378,3 +1672,66 @@ validation:
       SHOULD declare a `methodology_provenance:` block when the
       methodology has a credible originator. Informational only —
       brands MAY omit if the methodology is in-house or unattributed.
+
+  # ---------------------------------------------------------------------
+  # (v1.5) New validation rules — data-viz layer
+  # ---------------------------------------------------------------------
+
+  - id: data-viz-color-tokens-resolve
+    severity: error
+    rule: |
+      (v1.5) Every design-token reference in `data-viz/colors.md`
+      (token names enclosed in backticks within the role-mapping
+      table or body, conventionally prefixed with `--`) MUST resolve
+      to a token defined in `design-tokens.md` or, when present, in
+      a file under `ui-tokens/`. The data-viz layer assigns ROLES to
+      existing tokens; it MUST NOT redeclare hex values. Validators
+      that detect a hex literal (e.g., `#1a2b3c`) inside the role
+      table SHOULD warn that the value belongs in the design-tokens
+      layer instead.
+
+  - id: data-viz-chart-type-coverage-warn
+    severity: warn
+    rule: |
+      (v1.5) When `data-viz/chart-types.md` declares a `forbidden:`
+      array in frontmatter, validators SHOULD warn if any
+      `messaging/channel-*.md`, `prompts/*.md`, or `examples/*.md`
+      file references a forbidden chart type by slug (e.g., the
+      string `pie chart` when `pie` is on the forbidden list).
+      Detection is substring-match on the kebab-case slug; brands
+      MAY suppress with an explicit "exception:" inline annotation.
+      Convention-only warning in v1.5; richer enforcement is v2.
+
+  - id: data-viz-annotation-source-required
+    severity: warn
+    rule: |
+      (v1.5) When `data-viz/annotations.md` declares
+      `source_citation_required: true` in frontmatter, downstream
+      content generators (chart producers, slide generators) MUST
+      attach a source citation to every annotation that contains a
+      numeric claim. Validators of generated artifacts SHOULD warn
+      when an annotation contains a number but no citation.
+      Brand-spec validators (which validate the brand repo, not
+      generated artifacts) treat this as informational against the
+      brand repo itself.
+
+  - id: data-viz-no-hex-redeclaration
+    severity: warn
+    rule: |
+      (v1.5) Files under `data-viz/` SHOULD NOT contain hex color
+      literals (e.g., `#1a2b3c`, `rgb(...)`, `hsl(...)`). The
+      data-viz layer's job is role assignment to existing
+      design-token names — hex values belong in `design-tokens.md`
+      or `ui-tokens/`. Validators SHOULD warn when a hex literal
+      appears in any `data-viz/*.md` body. Hex literals inside
+      blockquote `> Quoted:` callouts or `examples/` reference
+      output are exempt.
+
+  - id: data-viz-framework-recommended
+    severity: info
+    rule: |
+      (v1.5) When any file under `data-viz/` exists,
+      `data-viz/_framework.md` SHOULD also exist so the layer's
+      scope and consumption model are documented. Informational —
+      a brand that ships only `data-viz/colors.md` for downstream
+      tooling consumption MAY omit the framework file.
