@@ -55,6 +55,50 @@ Body (target ≈ 2-4K tokens):
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
 
+## What's new in v1.2.1
+
+Two coupled additive conventions on the assets layer. Both are optional
+and backward-compatible — v1.2 brands validate cleanly against v1.2.1
+with zero changes.
+
+1. **Asset format preference (PNG accepted, SVG preferred for future).**
+   PNG (or other raster) is an accepted format for any logo file. SVG is
+   preferred for future additions or replacements when vector source
+   becomes available — useful for scaling beyond native resolution,
+   programmatic recoloring, vector ops in design tools, and large-format
+   print. PNG remains the right choice for email, social profile/cover
+   images, and any context bounded to native resolution. Brands MUST
+   NOT auto-trace PNG to SVG for typographic wordmarks (tracing
+   produces noisy polygons that fail to match optical kerning).
+
+2. **Wordmark structured metadata.** An optional `wordmark:` frontmatter
+   block on `assets/_manifest.md` captures the canonical glyph sequence
+   (`text`), an ASCII fallback (`text_ascii`, required only when `text`
+   contains non-ASCII characters), and metadata about typeface, weight,
+   case, and glyph behavior. AI agents and downstream tools can use
+   this to render brand-bearing artifacts correctly across surfaces
+   that vary in their support for non-ASCII characters.
+
+See the schema's `assets` layer in `brand.yaml` for full field
+definitions and `templates/empty-brand/assets/_manifest.md` for the
+canonical example.
+
+### Wordmark guidance for AI agents
+
+When generating brand-bearing artifacts (decks, emails, code, social
+posts, package metadata), an agent SHOULD read the `wordmark:` block
+from `assets/_manifest.md` and apply this precedence rule: `text` is
+the canonical form and SHOULD be used wherever the consuming surface
+can render it. `text_ascii` is the fallback ONLY when the surface
+cannot render the canonical glyphs — typical examples are CLI output
+in environments with restricted encodings, URLs, npm package names,
+GitHub org slugs, and social handles that reject non-ASCII characters.
+
+Do not silently substitute `text_ascii` when the canonical form works.
+If the brand also documents a two-spelling rule in `vocabulary.md`,
+defer to that — the wordmark block exists to make the canonical/ASCII
+pair machine-readable, not to override editorial guidance.
+
 ## What's new in v1.2
 
 Four additive schema changes, all backward-compatible with v1.1:

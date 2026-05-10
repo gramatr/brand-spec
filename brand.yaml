@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.2.0
+contract_version: 1.2.1
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -317,10 +317,81 @@ layers:
     directories:
       - path: assets/
         required: true
+        notes: |
+          (v1.2.1) Format preference convention — recommended, not enforced
+          by the validator. PNG (or other raster) is accepted for any logo
+          file; SVG is preferred for future additions or replacements when
+          vector source becomes available. SVG matters when scaling beyond
+          native resolution (signage, full-bleed slide titles, large-format
+          print), recoloring programmatically, or doing vector ops in
+          design tools. PNG remains the right choice for email (SVG support
+          is patchy in Outlook), social profile/cover images, and any
+          context bounded to native resolution. Brands MUST NOT auto-trace
+          PNG to SVG for typographic wordmarks — tracing produces noisy
+          polygons that fail to match optical kerning. Tracing is
+          appropriate for high-contrast geometric marks only. See
+          `templates/empty-brand/assets/_manifest.md` for the canonical
+          framing brands SHOULD adopt verbatim.
         contents:
-          - { path: _manifest.md, required: true,  notes: "approved asset registry with usage context" }
-          - { glob: "*.svg",      required: false, notes: "logo and brand mark vectors" }
-          - { glob: "*.png|*.jpg", required: false }
+          - { path: _manifest.md, required: true,  notes: "approved asset registry with usage context; (v1.2.1) MAY include the optional `wordmark:` frontmatter block — see below" }
+          - { glob: "*.svg",      required: false, notes: "logo and brand mark vectors (preferred for future additions)" }
+          - { glob: "*.png|*.jpg", required: false, notes: "raster logo and brand mark exports (accepted; right choice for email, social profile/cover, native-resolution surfaces)" }
+        manifest_frontmatter:
+          wordmark:
+            type: object
+            required: false
+            notes: |
+              (v1.2.1) Optional wordmark metadata block on
+              `assets/_manifest.md`. When present, captures the canonical
+              glyph sequence, typeface, and ASCII fallback for the brand's
+              wordmark so AI agents and downstream tools can render it
+              correctly. When absent (icon-only brands, or brands without
+              a wordmark), nothing changes — this is purely additive.
+
+              Precedence rule: `text` is the canonical form and SHOULD be
+              used wherever the consuming surface can render it.
+              `text_ascii` is the fallback ONLY when the surface cannot
+              render the canonical glyphs (CLI, URLs, npm package names,
+              social handles that reject non-ASCII). Tools MUST NOT
+              substitute `text_ascii` when the canonical works.
+            properties:
+              text:
+                type: string
+                required_when: "wordmark block is present"
+                notes: "canonical glyph sequence as it appears in the logo (e.g., 'grāmatr')"
+              text_ascii:
+                type: string
+                required_when: "`text` contains non-ASCII characters"
+                notes: |
+                  ASCII fallback for contexts that cannot render the
+                  canonical glyphs (CLI, URLs, package names, social
+                  handles where non-ASCII is rejected). When `text` is
+                  pure ASCII, this field MAY be omitted (or set equal to
+                  `text` for consumer-side simplicity).
+              typeface:
+                type: string
+                required: false
+                notes: "font family the wordmark is set in (e.g., 'Outfit')"
+              weight:
+                type: integer
+                required: false
+                notes: "numeric font weight (e.g., 400, 600, 700)"
+              case:
+                type: string
+                required: false
+                enum: [lowercase, uppercase, titlecase, mixed]
+                notes: "case treatment of the canonical wordmark"
+              glyph_notes:
+                type: string
+                required: false
+                notes: |
+                  Human/agent-readable notes on special characters,
+                  diacritics, ligatures, or any non-obvious glyph that
+                  affects rendering or fallback. Particularly important
+                  when `text` contains non-ASCII characters — explain
+                  what carries meaning and when the ASCII fallback
+                  applies. When the brand also documents a two-spelling
+                  rule in `vocabulary.md`, cross-reference it here.
       - path: fonts/
         required: false
         notes: "self-hosted typeface files; license file (e.g., OFL-*.txt) MUST accompany"
