@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.3.0
+contract_version: 1.4.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -195,6 +195,89 @@ conventions:
       - founder-guest-articles
       - podcast-intro-outro
       - webinar-scripts
+
+  # (v1.4) Cross-cutting frontmatter convention for attributing the
+  # origin of a methodology, framework, or convention referenced or
+  # operationalized by a layer. First consumer is the journey/KYKC
+  # layer (which uses it twice — once for KYKC the discipline, once
+  # for CognitiveJourney the artifact). The convention is intentionally
+  # generic so future contributed methodologies (voice-register patterns,
+  # channel-guide templates, compliance-gate frameworks, etc.) can be
+  # attributed using the same shape.
+  #
+  # Optional on every layer — never required. When present, the block
+  # MUST be authoritative; brands MUST NOT claim provenance they do not
+  # have. The `references:` array is additive — entries can be added
+  # over time without bumping the spec version.
+  methodology_provenance:
+    notes: |
+      Frontmatter block applicable to any markdown file that documents
+      a named methodology. Co-equal methodologies (e.g., KYKC the
+      discipline and CognitiveJourney the artifact) get separate
+      blocks, not a merged one.
+    fields:
+      name:
+        type: string
+        required: true
+        notes: "human-readable methodology name (e.g., 'Know Your Customer (KYKC)')"
+      short_name:
+        type: string
+        required: false
+        notes: "stable slug used by cross-references and downstream tools"
+      originator:
+        type: string
+        required: true
+        notes: |
+          Attributed person or organization. Use the person when
+          attribution is to an individual; use the organization when
+          attribution is collective.
+      developed_at:
+        type: string
+        required: false
+        notes: |
+          Context where the methodology was developed (e.g., the
+          agency, lab, or product where it originated). Free-text;
+          may include a parenthetical clarifying the entity type
+          (e.g., 'grāmatr (digital marketing agency)').
+      developed_year:
+        type: [integer, string]
+        required: true
+        notes: |
+          Numeric year of origination, OR a string for date ranges
+          (e.g., 2005, '2005-present', 'circa 2005'). When a precise
+          year is unknown, use the 'circa' form rather than guessing.
+      refined_through:
+        type: string
+        required: false
+        notes: |
+          Free-text description of how the methodology has evolved
+          since origination (e.g., '20 years of agency, adtech, and
+          AI work').
+      continuity_note:
+        type: string
+        required: false
+        notes: |
+          Optional — for cases where brand identity is continuous
+          across decades or where the methodology has been carried
+          across organizational boundaries. Use to disambiguate
+          rebrands from continuous brand identity.
+      references:
+        type: array
+        required: false
+        notes: |
+          Citable artifacts (URLs, drive links, internal docs,
+          conference talks). Empty array is valid. Entries may be
+          plain strings or objects with `title`, `url`, `kind`
+          (`client-deliverable` | `published-writing` | `internal-doc`
+          | `conference-talk` | `other`), and optional `date`
+          (YYYY-MM-DD). Mixed shapes within the same array are
+          tolerated — validators MUST accept both forms.
+      notes:
+        type: string
+        required: false
+        notes: |
+          Free-text additional context — what makes this methodology
+          distinct, why it matters now, what consumers should know.
 
 # -----------------------------------------------------------------------------
 # Layers
@@ -739,6 +822,116 @@ layers:
             required: false
             notes: "deprecated personas; preserved for historical context but not ingested as live"
 
+  # --- JOURNEY (v1.4) ----------------------------------------------------
+  journey:
+    required: false
+    recommended: true
+    description: |
+      (v1.4) Cognitive journey of the brand's prospects, expressed as
+      ordered stages. Sits beside `personas/` (which describe WHO) and
+      describes WHEN/WHERE in their thinking — the prospect's mental
+      state at each stage of the buying or adoption process.
+
+      The layer operationalizes a 20-year-old methodology, **KYKC
+      (Know Your Kingdom + Know Your Customer)**, originated by Brian
+      Handrigan at the grāmatr digital marketing agency circa 2005.
+      KYKC is the discipline; the **CognitiveJourney** is the
+      structured artifact that operationalizes the customer side.
+      Both are co-equal first-class concepts shipped inline as this
+      layer (NOT a separately-referenced contract).
+
+      The 5 canonical stages are
+      `problem-recognition` → `information-seeking` →
+      `option-evaluation` → `decision-validation` → `post-decision`.
+      Brands MAY rename, reorder, add, or omit stages — the canonical
+      list is a default, not a constraint. See `journey-canonical-stage-warn`
+      for the soft signal validators emit when canonical slugs are
+      renamed.
+
+      Why this layer exists: AI search and generation tools work
+      better when fed the prospect's actual mental vocabulary,
+      verbatim questions, and stage-aware content goals. See the
+      "Why this matters for AI search" section in `journey/_framework.md`
+      for the mechanical mapping.
+
+      Most brands benefit from this layer; small or early-stage brands
+      MAY skip it. When omitted, downstream tools that consume the
+      journey (FAQ-schema generators, stage-aware messaging variants,
+      compliance-gate evaluators) degrade gracefully.
+    directories:
+      - path: journey/
+        contents:
+          - path: _framework.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:                    { type: string, required: true, const: framework }
+              version:                 { type: string, required: false }
+              methodology_provenance:  { type: object, required: false, notes: "see conventions.methodology_provenance — recommended on this file (one block for KYKC the discipline, optionally a second for any sibling methodology this brand layers in)" }
+            body_sections_recommended:
+              - "The discipline (KYKC)"
+              - "The artifact (CognitiveJourney)"
+              - "Methodology origins"
+              - "Why this matters for AI search"
+              - "How to use this layer"
+              - "Relationship to other layers"
+            notes: |
+              The framework file documents the discipline and the
+              artifact; the actual stages live in stages.md (overview)
+              and stages/<slug>.md (detail). When a brand attributes
+              the methodology to a contributor, place a
+              `methodology_provenance:` block in this file's
+              frontmatter.
+          - path: stages.md
+            required: false
+            recommended: true
+            frontmatter:
+              type:                    { type: string, required: true, const: stage-overview }
+              version:                 { type: string, required: false }
+              methodology_provenance:  { type: object, required: false, notes: "see conventions.methodology_provenance — when present here, attributes the journey artifact (CognitiveJourney). Co-equal with the discipline-level block on _framework.md." }
+              stages:
+                type: array
+                required: true
+                notes: |
+                  Ordered list of stage records. Each entry MUST be an
+                  object with at least `slug` (kebab-case, stable),
+                  `label` (display string), and `order` (non-negative
+                  integer, unique within the array). Additional
+                  per-stage fields MAY appear here for at-a-glance
+                  reference, but the authoritative per-stage detail
+                  lives in `journey/stages/<slug>.md`.
+            notes: |
+              The at-a-glance stage list. Tabular markdown body is
+              recommended for human readability; the authoritative
+              data is the `stages:` frontmatter array. When a brand
+              wants a flat single-file journey (no per-stage detail
+              files), this file MAY carry the full per-stage
+              frontmatter inline — but per-stage files are recommended
+              once the journey is non-trivial.
+          - path: stages/
+            required: false
+            recommended: true
+            contents:
+              - pattern: "{stage-slug}.md"
+                required: false
+                recommended: true
+                frontmatter:
+                  slug:               { type: string,  required: true,  notes: "kebab-case; matches filename and the slug used in stages.md frontmatter" }
+                  label:              { type: string,  required: true,  notes: "display label" }
+                  order:              { type: integer, required: true,  notes: "non-negative; unique across the journey; rendering order is ascending" }
+                  description:        { type: string,  required: true,  notes: "1-3 sentences on the prospect's mental state at this stage" }
+                  triggers:           { type: array,   required: false, items: { type: string }, notes: "events that move a prospect INTO this stage" }
+                  hurdles:            { type: array,   required: false, items: { type: string }, notes: "what prevents the prospect from advancing FROM this stage" }
+                  mental_vocabulary:  { type: array,   required: false, items: { type: string }, notes: "the prospect's actual words and phrases — distinct from the brand's vocabulary.md preferred terms" }
+                  questions_asked:    { type: array,   required: false, items: { type: string }, notes: "verbatim questions the prospect asks at this stage; downstream tools may emit FAQPage schema from this list" }
+                  content_goal:       { type: string,  required: false, notes: "what content must accomplish at this stage (1-2 sentences)" }
+                notes: |
+                  Per-stage detail file. Body MAY include additional
+                  narrative, evidence pulls from prospect interviews,
+                  or stage-specific notes that don't fit the
+                  frontmatter shape. Authoritative data lives in
+                  frontmatter; body is human-facing context.
+
   # --- PROOF -------------------------------------------------------------
   proof:
     required: false
@@ -1123,3 +1316,65 @@ validation:
       are not. Drift-detection tooling reads this section to flag
       generated content that resembles the negative-space
       examples. Informational only — brands MAY omit.
+
+  # ---------------------------------------------------------------------
+  # (v1.4) New validation rules — journey/KYKC layer
+  # ---------------------------------------------------------------------
+
+  - id: journey-stages-monotonic-order
+    severity: error
+    rule: |
+      (v1.4) Within a single journey, every stage MUST declare a
+      non-negative integer `order` value, and every `order` value
+      MUST be unique across the stage set (declared in
+      `journey/stages.md` frontmatter and/or per-stage files under
+      `journey/stages/`). Rendering order is `order` ascending.
+      Validators MUST error on duplicate or negative `order` values
+      and on stages missing `order` entirely.
+
+  - id: journey-stage-slug-resolves
+    severity: warn
+    rule: |
+      (v1.4) When a file outside the journey layer references a
+      stage slug (e.g., a future `messaging/for-{audience}-at-{stage}.md`
+      filename, or a `journey_stage:` frontmatter pointer), the slug
+      MUST resolve to either an entry in `journey/stages.md`
+      frontmatter `stages[].slug` or an existing
+      `journey/stages/<slug>.md` file. Severity is `warn` in v1.4
+      because cross-layer reference syntax has not been finalized;
+      the rule will tighten to `error` when journey-stage messaging
+      variants land in a future minor.
+
+  - id: journey-canonical-stage-warn
+    severity: warn
+    rule: |
+      (v1.4) The 5 canonical KYKC stage slugs are
+      `problem-recognition`, `information-seeking`,
+      `option-evaluation`, `decision-validation`, `post-decision`.
+      Brands MAY rename, reorder, add, or omit stages — the
+      canonical list is a default, not a constraint. When a brand
+      renames a canonical slug (declares a stage whose `label`
+      semantically matches a canonical stage but whose `slug`
+      diverges), validators SHOULD warn that downstream tools may
+      not recognize the rename without an alias map. This is a
+      soft signal, not an error; brands have legitimate reasons to
+      customize stage taxonomies.
+
+  - id: methodology-provenance-required-when-present
+    severity: error
+    rule: |
+      (v1.4) When a `methodology_provenance:` block appears in any
+      file's frontmatter, the sub-fields `name`, `originator`, and
+      `developed_year` MUST be present and non-empty. All other
+      sub-fields (`short_name`, `developed_at`, `refined_through`,
+      `continuity_note`, `references`, `notes`) are optional. The
+      `references:` array MAY be empty or absent.
+
+  - id: methodology-provenance-recommended-on-framework
+    severity: info
+    rule: |
+      (v1.4) Framework files that document a named methodology
+      (currently: `journey/_framework.md` and `journey/stages.md`)
+      SHOULD declare a `methodology_provenance:` block when the
+      methodology has a credible originator. Informational only —
+      brands MAY omit if the methodology is in-house or unattributed.
