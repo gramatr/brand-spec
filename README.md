@@ -55,6 +55,53 @@ Body (target ≈ 2-4K tokens):
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
 
+## What's new in v1.6.1
+
+Patch release. The existing `design/` layer is extended with optional
+**iconography conventions** — an `iconography.md` file capturing icon
+set, sizing, color treatment, stroke vs fill, spacing, and one-set
+exceptions, plus an optional `design/icons/` directory for custom icon
+sources. No new top-level layer, no new required fields. v1.6.0
+brands validate cleanly against v1.6.1 with zero changes.
+
+The release also formalizes the **decorative-vs-functional
+distinction**: gradient or decorative "icons" that read as brand
+imagery (e.g., section-decoration gradient SVGs on a marketing site)
+belong in `assets/_manifest.md` and are governed by the assets layer.
+Functional UI icons that participate in the icon system belong in
+`design/iconography.md`. Brands SHOULD document the distinction
+explicitly when both surfaces are present. Real example: lean-media's
+`custom-icon_*-grad.svg` files (audience, farm characteristics,
+location, Venn diagram) are decorative gradient illustrations that
+already live conceptually in the assets manifest; the implicit
+functional iconography (favicon, any future UI surface) would land in
+`design/iconography.md`.
+
+Three new validation rules ship with the extension:
+
+- `iconography-set-resolves` (info) — when `icon_set.name` is
+  `custom`, the `design/icons/` directory SHOULD exist with at least
+  one icon file and a `_manifest.md`. Public libraries (lucide,
+  material-symbols, heroicons, etc.) need no local files.
+- `iconography-sizing-references-resolve` (warn) — sizing values
+  MUST resolve to design-tokens (or `ui-tokens/`) by name; never
+  redeclare px or rem values here. Mirrors the v1.5
+  `data-viz-color-tokens-resolve` and the v1.6
+  `image-gen-design-token-references-resolve` rules.
+- `iconography-decorative-distinction-recommended` (info) — when
+  both functional iconography and decorative gradient icons exist
+  in a brand, `iconography.md` SHOULD include a "Decorative vs
+  functional" body section spelling out which assets fall on which
+  side.
+
+Semver: **PATCH bump** per `VERSIONING.md`. This is an extension of
+an existing layer with optional fields — not a new capability domain.
+The decorative-vs-functional distinction reuses the existing assets
+layer (no new structure on that side); the iconography file extends
+`design/` with optional content. See
+[`templates/empty-brand/design/iconography.md`](./templates/empty-brand/design/iconography.md)
+for the worked example.
+
 ## What's new in v1.6
 
 A new top-level `image-generation/` layer brings **AI image
