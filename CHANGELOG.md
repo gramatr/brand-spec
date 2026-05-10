@@ -4,6 +4,143 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.4.0] — 2026-05-10
+
+Closes Phase 1 of the brand-spec coverage epic
+[`gramatr/brand-spec#13`](https://github.com/gramatr/brand-spec/issues/13):
+sub-issues
+[#14](https://github.com/gramatr/brand-spec/issues/14) (journey schema
+design),
+[#15](https://github.com/gramatr/brand-spec/issues/15) (journey docs +
+methodology Provenance), and
+[#16](https://github.com/gramatr/brand-spec/issues/16)
+(`methodology_provenance:` convention). Sub-issues #17 (legal/trademark
+relocation) and #18 (lean-media journey validation) remain open and
+will ship as separate follow-up PRs.
+
+Semver justification: **MINOR bump (per `VERSIONING.md`).** A new
+top-level layer is the canonical example of "a genuinely new capability
+domain" called out in the policy as warranting a minor bump (the policy
+gives `interactions/` and `taxonomies/` as the two named examples;
+`journey/` is the same shape of change). The default-to-patch rule has
+a documented exception for new layers; this bump invokes it explicitly.
+No required field added, no enum tightened, no existing field renamed
+or removed. v1.3.0 brands (NEXT90, gramatr-brand, lean-media-brand)
+validate cleanly against v1.4 with zero changes — none of them
+currently have a `journey/` directory and the layer is
+`recommended: true, required: false`.
+
+This release introduces the first methodology brought into brand-spec
+with explicit, structured attribution. **KYKC (Know Your Customer)** and
+**CognitiveJourney** were developed by Brian Handrigan at the grāmatr
+digital marketing agency circa 2005 and refined across 20 years of
+agency, adtech, and AI work. The grāmatr brand identity has been
+continuous across that arc — same brand carrying the same methodology
+through three industry eras, not a rebrand. Both methodologies are
+open-sourced into the spec under MIT license; brands MAY adopt the
+methodology and the attribution as-is. The
+`methodology_provenance:` frontmatter convention sets the precedent for
+how future contributed methodologies (voice-register patterns,
+channel-guide templates, compliance-gate frameworks, etc.) get
+attributed: credible originator, real history, no false claims.
+
+### Added
+
+- **`journey/` layer (issue #14, #15, Gap 10 from #12).** New top-level
+  layer, `required: false, recommended: true`. Operationalizes the KYKC
+  discipline by capturing the prospect's cognitive journey in ordered
+  stages. Layer files:
+    - `journey/_framework.md` — discipline-level documentation. Six
+      recommended body sections: "The discipline (KYKC)", "The artifact
+      (CognitiveJourney)", "Methodology origins", "Why this matters for
+      AI search", "How to use this layer", "Relationship to other
+      layers". Carries an optional `methodology_provenance:`
+      frontmatter block attributing KYKC the discipline.
+    - `journey/stages.md` — at-a-glance stage overview. Authoritative
+      `stages:` frontmatter array of `{slug, label, order}` records.
+      Body MAY include a tabular human-readable stage list. Carries an
+      optional `methodology_provenance:` block attributing
+      CognitiveJourney the artifact (co-equal with the discipline-level
+      block — two methodologies, attributed distinctly).
+    - `journey/stages/<stage-slug>.md` — per-stage detail files.
+      Frontmatter captures `slug`, `label`, `order`, `description`,
+      `triggers[]`, `hurdles[]`, `mental_vocabulary[]`,
+      `questions_asked[]`, `content_goal`. These are the load-bearing
+      fields AI tooling reads to generate on-stage content.
+  The 5 canonical KYKC stages (`problem-recognition`,
+  `information-seeking`, `option-evaluation`, `decision-validation`,
+  `post-decision`) are the default; brands MAY rename, reorder, add, or
+  omit (canonical-with-extension model).
+
+- **`methodology_provenance:` frontmatter convention (issue #16).**
+  Documented once under `conventions:` in `brand.yaml`, applicable to
+  any markdown file that documents a named methodology. Sub-fields:
+  `name` (required), `originator` (required), `developed_year`
+  (required); `short_name`, `developed_at`, `refined_through`,
+  `continuity_note`, `references`, `notes` all optional. Co-equal
+  methodologies get separate blocks (not a merged one) — first
+  demonstrated by the journey layer's separate blocks for KYKC the
+  discipline and CognitiveJourney the artifact.
+
+- **Validation rules (4 new):**
+    - `journey-stages-monotonic-order` (error) — every stage MUST
+      declare a non-negative integer `order`; values MUST be unique
+      across the stage set.
+    - `journey-stage-slug-resolves` (warn) — when a file outside the
+      journey layer references a stage slug, the slug MUST resolve to
+      an entry in `stages.md` or an existing
+      `journey/stages/<slug>.md`. Warn-only in v1.4 because cross-layer
+      reference syntax is not finalized; will tighten to error when
+      journey-stage messaging variants land.
+    - `journey-canonical-stage-warn` (warn) — when a brand renames a
+      canonical KYKC stage slug, validators warn that downstream tools
+      may not recognize the rename without an alias map. Soft signal,
+      not blocking.
+    - `methodology-provenance-required-when-present` (error) — when
+      the block appears, `name`, `originator`, and `developed_year`
+      MUST be present and non-empty.
+    - `methodology-provenance-recommended-on-framework` (info) —
+      framework files documenting a named methodology SHOULD declare
+      the block when there is a credible originator.
+
+- **`templates/journey-example/`** — worked example for a hypothetical
+  Acme HR brand. Demonstrates the full layer shape: `_framework.md`
+  with both `methodology_provenance:` blocks filled in (using the
+  open-sourced KYKC attribution as the canonical example), `stages.md`
+  with all 5 canonical stages, and 3 of 5 per-stage detail files
+  (`problem-recognition`, `option-evaluation`, `post-decision`).
+  Intentionally omits 2 per-stage files to demonstrate that per-stage
+  detail files are recommended-not-required.
+
+### Changed
+
+- `contract_version` bumped to `1.4.0`.
+- `README.md` updated: layer overview now lists the journey layer; new
+  "What's new in v1.4" section documents the layer, the
+  `methodology_provenance:` convention, and the open-source attribution
+  of KYKC and CognitiveJourney.
+
+### Out of scope (deferred)
+
+The following are intentionally NOT in v1.4 and will land in later
+phases of the #13 epic:
+
+- **Journey-stage messaging variants** (e.g.,
+  `messaging/for-{audience}-at-{stage}.md`). Phase 2 work; cross-layer
+  reference syntax requires a brand to operationalize first
+  (`lean-media-brand` is the canonical validation brand in #18).
+- **KYKC compliance gates** (the 4 booleans Studio's MessageBrief
+  uses today: `authenticClaims`, `questionsBeforeKeywords`,
+  `capabilityNeedAlignment`, `cognitiveAuthority`, plus `eeatCompliance`).
+  Phase 3 work; will likely live in `prompts/` or a new `compliance/`
+  layer, not in `journey/`.
+- **`evidence_required[]`** and **`transition_signals_to_next[]`**
+  per-stage fields from the original schema sketch in #14. Judged
+  speculative until a real brand surfaces the need; `triggers` and
+  `hurdles` cover most of the same intent for v1.4.
+- **Legal/trademark relocation** for `gramatr-brand`'s service mark
+  (sub-issue #17, Gap 6 from #12). Independent patch-level PR.
+
 ## [1.3.0] — 2026-05-09
 
 Closes nine schema gaps tracked in

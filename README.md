@@ -55,6 +55,53 @@ Body (target ≈ 2-4K tokens):
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
 
+## What's new in v1.4
+
+A new top-level `journey/` layer brings **KYKC (Know Your Customer)**
+and the **CognitiveJourney** artifact into brand-spec as first-class
+concepts. KYKC is the discipline; CognitiveJourney is the structured
+shape that operationalizes it. Both ship inline as the new layer (NOT a
+separately-referenced contract); both are co-equal and attributed
+distinctly using a new `methodology_provenance:` frontmatter convention.
+
+The layer captures the prospect's cognitive journey in ordered stages.
+The 5 canonical stages — `problem-recognition` →
+`information-seeking` → `option-evaluation` → `decision-validation` →
+`post-decision` — are a default; brands MAY rename, reorder, add, or
+omit. Per-stage detail files capture the prospect's `mental_vocabulary`,
+verbatim `questions_asked`, the `triggers` that move them into the
+stage, the `hurdles` that prevent advancement, and the stage-specific
+`content_goal`. These fields map mechanically onto AI-search surfaces:
+mental vocabulary feeds embedding-space retrieval, verbatim questions
+feed FAQPage schema and AI Overview citations, triggers shape
+top-of-funnel intent capture, hurdles drive objection-handling content.
+See [`templates/journey-example/journey/_framework.md`](./templates/journey-example/journey/_framework.md)
+for the full mechanical mapping.
+
+The `methodology_provenance:` convention is documented once under
+`conventions:` in `brand.yaml` and is applicable to any layer. Required
+sub-fields when present: `name`, `originator`, `developed_year`. Other
+sub-fields are optional. Co-equal methodologies (e.g., KYKC the
+discipline and CognitiveJourney the artifact) get separate blocks, not
+a merged one.
+
+KYKC and CognitiveJourney were developed by **Brian Handrigan** at the
+**grāmatr digital marketing agency, circa 2005**, and refined across
+20 years of agency, adtech, and AI work — the grāmatr brand identity
+has been continuous across that arc. This is the first methodology
+brought into brand-spec with explicit, structured attribution; the
+convention sets the precedent for how future contributed methodologies
+(voice-register patterns, channel-guide templates, compliance-gate
+frameworks) get attributed: credible originator, real history, no
+false claims.
+
+Semver: **MINOR bump** per `VERSIONING.md` (new top-level layer = new
+capability domain). v1.3.0 brands validate cleanly against v1.4 with
+zero changes — the journey layer is `recommended: true, required:
+false`, and no required field was added to any existing layer. See
+[`CHANGELOG.md`](./CHANGELOG.md) for the full v1.4.0 entry and the
+explicit out-of-scope list.
+
 ## What's new in v1.3
 
 Nine additive schema changes surfaced by the second wave of multi-register
