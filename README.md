@@ -55,6 +55,82 @@ Body (target ≈ 2-4K tokens):
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
 
+## What's new in v1.5
+
+A new top-level `data-viz/` layer brings **charting and data
+visualization** into brand-spec as a first-class capability domain.
+The layer is `recommended: true, required: false`. v1.4 brands
+validate cleanly against v1.5 with zero changes — no required field
+was added to any existing layer.
+
+The layer was driven by the audit (#12 / #13) finding that brands
+routinely document the same chart guidance two and three times
+across `messaging/channel-*.md` files — once per channel that ever
+shows a chart. NEXT90's deck, social, and landing-page channel
+guides each carry near-identical sections on chart palette, axis
+treatment, big-stat formatting, and source citation. With this
+layer in place, those rules have a single canonical home and the
+channel guides reference it.
+
+The layer comprises seven files (all optional, all recommended):
+
+- `data-viz/_framework.md` — what this layer covers, when to use it
+  vs `design-tokens.md`, how downstream tools consume it.
+- `data-viz/colors.md` — categorical / sequential / diverging /
+  semantic palette assignments. **References design-tokens by name;
+  never redeclares hex values.**
+- `data-viz/chart-types.md` — per-brand allowed/forbidden chart-type
+  policy. The slot is universal; the policy is brand-defined.
+- `data-viz/axes-and-grid.md` — origin behavior, gridline
+  conventions, tick density, label rotation.
+- `data-viz/annotations.md` — big-stat callouts, inline highlights,
+  source citation rules. The optional `source_citation_required:
+  true` frontmatter flag enforces source citation on numeric
+  annotations.
+- `data-viz/numbers.md` — currency, percentage, large-number
+  abbreviation, precision, locale, negative-number convention.
+- `data-viz/tables.md` — header treatment, column alignment,
+  empty-cell convention, sort indicators.
+
+The four-family color-role taxonomy (categorical / sequential /
+diverging / semantic) follows established information-design
+practice — Tableau, IBM Carbon Charts, Material Design Data Viz,
+and Observable Plot all use the same shape. Brands may use any
+subset; the spec does not prescribe which families a brand must
+populate.
+
+Five new validation rules ship with the layer, severities calibrated
+to the rule's purpose:
+
+- `data-viz-color-tokens-resolve` (error) — token references in
+  `data-viz/colors.md` MUST resolve to design-token definitions.
+- `data-viz-no-hex-redeclaration` (warn) — hex literals in
+  `data-viz/*.md` belong in `design-tokens.md` instead.
+- `data-viz-chart-type-coverage-warn` (warn) — when a brand declares
+  a `forbidden:` chart-type list, validators warn if a channel guide
+  or prompt references one of the forbidden types.
+- `data-viz-annotation-source-required` (warn) — when a brand sets
+  `source_citation_required: true`, downstream artifact generators
+  must attach citations to numeric annotations.
+- `data-viz-framework-recommended` (info) — when any data-viz file
+  exists, `_framework.md` SHOULD also exist.
+
+Migration recommendation for brands today carrying duplicate chart
+guidance in channel files: consolidate into `data-viz/` when next
+revisiting those guides. The migration is not forced — channel
+files continue to validate cleanly with the prose intact — but the
+duplication is a known liability and `data-viz/` is the canonical
+home going forward.
+
+Semver: **MINOR bump** per `VERSIONING.md` (new top-level layer =
+new capability domain). The `journey/` layer in v1.4 was the same
+shape of change; the policy's named examples (`interactions/`,
+`taxonomies/`) are also the same shape. v1.4 brands validate
+cleanly against v1.5 with zero changes — the data-viz layer is
+recommended-not-required, and no required field was added to any
+existing layer. See [`templates/data-viz-example/`](./templates/data-viz-example/)
+for a worked example using a hypothetical brand (Acme Analytics).
+
 ## What's new in v1.4
 
 A new top-level `journey/` layer brings **KYKC (Know Your Customer)**

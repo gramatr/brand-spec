@@ -4,6 +4,151 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.5.0] — 2026-05-10
+
+Closes Phase 2 sub-issue
+[`gramatr/brand-spec#23`](https://github.com/gramatr/brand-spec/issues/23)
+of the brand-spec coverage epic
+[`#13`](https://github.com/gramatr/brand-spec/issues/13). Addresses
+gap #1 from audit
+[`#12`](https://github.com/gramatr/brand-spec/issues/12) — the
+clearest "missing slot is forcing repetition" signal in the entire
+audit (NEXT90's chart guidance duplicated across three channel
+guides).
+
+Semver justification: **MINOR bump (per `VERSIONING.md`).** A new
+top-level layer is the canonical example of "a genuinely new
+capability domain" warranting a minor bump (the policy gives
+`interactions/` and `taxonomies/` as named examples; v1.4's
+`journey/` set the same precedent). No required field added; no
+enum tightened; no existing field renamed or removed. v1.4.0
+brands (NEXT90, gramatr-brand, lean-media-brand) validate cleanly
+against v1.5 with zero changes — none of them currently have a
+`data-viz/` directory and the layer is `recommended: true,
+required: false`.
+
+### Added
+
+- **`data-viz/` layer (issue #23, Gap 1 from #12).** New top-level
+  layer, `required: false, recommended: true`. Canonical home for
+  charting and data-visualization conventions. Layer files:
+    - `data-viz/_framework.md` — discipline-level documentation
+      (scope, boundaries with `design-tokens.md`, downstream
+      consumption model).
+    - `data-viz/colors.md` — assigns DATA ROLES (categorical-1,
+      sequential-low, diverging-positive, semantic-negative, etc.)
+      to design-token names. Hex values are NEVER redeclared here;
+      the token reference is the single source of truth.
+    - `data-viz/chart-types.md` — per-brand allowed/forbidden
+      chart-type policy. Optional `allowed:` and `forbidden:`
+      frontmatter arrays drive the
+      `data-viz-chart-type-coverage-warn` validator.
+    - `data-viz/axes-and-grid.md` — origin behavior, gridline
+      conventions, tick density, label rotation. Optional
+      `origin_policy:` frontmatter (`always-zero` / `free` /
+      `contextual`).
+    - `data-viz/annotations.md` — big-stat callouts, inline
+      highlights, source citation rules. Optional
+      `source_citation_required:` boolean.
+    - `data-viz/numbers.md` — currency, percentage, large-number
+      abbreviation, precision rules. Optional `locale:` (BCP-47)
+      and `currency_default:` (ISO 4217) frontmatter.
+    - `data-viz/tables.md` — header treatment, column alignment,
+      empty-cell convention.
+  All seven files are optional within the layer; brands MAY ship
+  any subset.
+
+- **Color-role taxonomy.** The four canonical families
+  (categorical / sequential / diverging / semantic) follow
+  established information-design practice — Tableau, IBM Carbon
+  Charts, Material Design Data Viz, and Observable Plot all use the
+  same shape. The `colors.md` file frontmatter carries an optional
+  `role_taxonomy:` (`categorical` / `semantic` / `sequential` /
+  `diverging` / `mixed`) for downstream tools.
+
+- **Validation rules (5 new):**
+    - `data-viz-color-tokens-resolve` (error) — every design-token
+      reference in `data-viz/colors.md` MUST resolve to a token
+      defined in `design-tokens.md` or under `ui-tokens/`.
+    - `data-viz-no-hex-redeclaration` (warn) — hex literals SHOULD
+      NOT appear in `data-viz/*.md` body; they belong in
+      `design-tokens.md`.
+    - `data-viz-chart-type-coverage-warn` (warn) — when a brand
+      declares `forbidden:` chart types, validators warn if a
+      `messaging/channel-*.md`, `prompts/*.md`, or `examples/*.md`
+      file references a forbidden type.
+    - `data-viz-annotation-source-required` (warn) — when
+      `source_citation_required: true`, downstream artifact
+      generators MUST attach source citations to numeric
+      annotations.
+    - `data-viz-framework-recommended` (info) — when any file
+      under `data-viz/` exists, `_framework.md` SHOULD also exist.
+
+- **`templates/data-viz-example/`** — worked example for a
+  hypothetical Acme Analytics brand. Demonstrates all seven layer
+  files. Shows: color roles assigned to token references (no hex
+  literals); a chart-type policy that forbids pie/donut/3D and
+  radar; number formatting for currency / percentage / scientific-
+  notation thresholds; the canonical big-stat callout format with
+  required source citation.
+
+### Changed
+
+- `contract_version` bumped to `1.5.0`.
+- `README.md` updated: new "What's new in v1.5" section above the
+  v1.4 section. Layer overview pattern matches v1.4.
+
+### Migration recommendation (not enforced)
+
+Brands carrying duplicate chart guidance in channel files (e.g.,
+NEXT90's deck/social/landing-page channel guides each restating
+chart palette, axis, big-stat, and source-citation conventions)
+SHOULD consolidate into `data-viz/` when next revisiting those
+guides. The migration is opportunistic — channel files continue to
+validate cleanly with the prose intact, and brands move at their
+own pace — but the duplication is a known drift risk and
+`data-viz/` is the canonical home going forward. Channel files
+SHOULD then reference the data-viz layer rather than restate its
+rules, retaining only the channel-specific deviations (chart count
+per surface, image vs. interactive rendering, etc.).
+
+### Backward compatibility
+
+- v1.4.0 brands (NEXT90, gramatr-brand, lean-media-brand) validate
+  cleanly against v1.5 with zero modifications. None of the three
+  currently has a `data-viz/` directory; the layer is
+  `recommended: true, required: false`.
+- No required field added to any existing layer.
+- No enum tightened, no existing field renamed or removed.
+- The five new validation rules trigger only when a brand
+  populates the data-viz layer; brands without the layer see no
+  new warnings or errors.
+
+### Out of scope (deferred)
+
+The following are intentionally NOT in v1.5 and will land in later
+phases:
+
+- **First-adopter brand population.** NEXT90 has the strongest
+  evidence base for the layer (chart guidance in three channel
+  guides). The first-adopter PR (NEXT90 populates `data-viz/`,
+  collapses the duplicated channel-guide prose) will be filed as a
+  follow-up sub-issue under epic #13.
+- **Iconography (#25)** and **image-generation (#24)** — sibling
+  Phase 2 issues; intentionally separate PRs.
+- **Cross-layer reference syntax** for channel guides to point at
+  data-viz files. The migration recommendation above describes the
+  pattern in prose; a structured reference shape (frontmatter
+  pointer or markdown link convention) is v2 territory.
+- **Validator implementation of the new rules.** The reference
+  validator (`gramatr/brand-spec-validator`) picks up v1.5 on the
+  next maintainer-triggered spec-sync run; the four
+  warn/info-severity rules are straightforward, the
+  `data-viz-color-tokens-resolve` error rule requires the validator
+  to parse `design-tokens.md` body for token definitions and
+  cross-reference (similar shape to the v1.3
+  `register-inheritance-cannot-subtract` rule).
+
 ## [1.4.0] — 2026-05-10
 
 Closes Phase 1 of the brand-spec coverage epic
