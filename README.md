@@ -55,6 +55,98 @@ Body (target ≈ 2-4K tokens):
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
 
+## What's new in v1.6
+
+A new top-level `image-generation/` layer brings **AI image
+generation conventions** into brand-spec as a first-class capability
+domain. The layer is `recommended: true, required: false`. v1.5
+brands validate cleanly against v1.6 with zero changes — no required
+field was added to any existing layer.
+
+The layer was driven by the audit (#12 / #13) finding that the
+existing `prompts/` layer covers prose generation only and has no
+slot for visual-generation prompts (Midjourney / DALL-E / Imagen /
+Flux), which have very different structure: style anchors, negative
+prompts, aspect-ratio defaults, people-depiction rules, and
+provenance concerns. The `design/photography-treatment.md` files
+that some brands carry document HUMAN-shot photography intent — they
+are a useful visual baseline, but they do not say how to GENERATE
+imagery. Two distinct surfaces.
+
+The layer comprises seven files (all optional, six recommended):
+
+- `image-generation/_framework.md` — what this layer covers, when
+  to use it vs commission a human shoot, relationship to
+  `design/photography-treatment.md`, how downstream tools consume
+  the layer.
+- `image-generation/style.md` — visual goal, style anchors
+  (concrete: film stocks, documentary traditions, named
+  photographers), composition defaults, aspect-ratio defaults per
+  channel. Optional `photography_treatment_ref:` cross-links to
+  the brand's photography-treatment file when one exists.
+- `image-generation/subject-matter.md` — what the brand depicts,
+  what the brand never depicts. Optional machine-readable `themes:`
+  and `forbidden_themes:` arrays for AI agents picking subjects
+  from a controlled set.
+- `image-generation/negative-prompts.md` — universal-negatives
+  array always appended to generation requests, plus brand-specific
+  exclusions and per-channel additions.
+- `image-generation/people.md` — when and how the brand depicts
+  humans, with declared age range, diversity intent, and forbidden
+  likenesses. The most ethically loaded slot in the layer; the
+  schema documents the fields, brands decide their own positions.
+- `image-generation/brand-overlays.md` — logo placement, watermarks,
+  brand color overlays, attribution. References
+  `assets/_manifest.md` for clear-space and `design-tokens.md` for
+  brand colors — never duplicates values.
+- `image-generation/provenance.md` — what the brand captures for
+  every generated image, what the brand requires before publishing,
+  user-facing labeling convention, approval workflow, retention,
+  jurisdictional considerations.
+
+The layer is **model-agnostic** in v1.6 — no per-model variants
+(`midjourney.md`, `dalle.md`). Per-model files MAY be added in a
+future patch when real divergence in prompt syntax surfaces;
+brand-spec stays neutral until then.
+
+The layer is **recommended, not required**. Most brands generating
+imagery via AI tools benefit; brands using only stock photography or
+commissioned shoots MAY skip the layer entirely.
+
+Six new validation rules ship with the layer:
+
+- `image-gen-photography-treatment-link-valid` (warn) — when style.md
+  declares a `photography_treatment_ref:`, the referenced file
+  MUST exist.
+- `image-gen-overlay-manifest-link-valid` (warn) — when
+  brand-overlays.md declares `assets_manifest_ref:`, the referenced
+  file MUST exist.
+- `image-gen-design-token-references-resolve` (error) — token
+  references in brand-overlays.md MUST resolve to design-token
+  definitions; the layer assigns USAGE to existing tokens, never
+  redeclares hex values.
+- `image-gen-people-required-fields-when-present` (warn) — when
+  people.md exists, it SHOULD declare at least one of `age_range`,
+  `diversity_intent`, or `forbidden_likenesses`, OR explicitly
+  state in the body that the brand does not generate people
+  imagery.
+- `image-gen-provenance-required-when-published` (info) — when
+  provenance.md declares `required_when_published:`, downstream
+  pipelines SHOULD enforce that every published image carries
+  those fields. Pipeline-level enforcement; brand-spec validators
+  treat as informational.
+- `image-gen-framework-recommended` (info) — when any file under
+  image-generation/ exists, `_framework.md` SHOULD also exist.
+
+Semver: **MINOR bump** per `VERSIONING.md` (new top-level layer =
+new capability domain). The `journey/` (v1.4) and `data-viz/`
+(v1.5) layers were the same shape of change. v1.5 brands validate
+cleanly against v1.6 with zero changes. See
+[`templates/image-generation-example/`](./templates/image-generation-example/)
+for a worked example using a hypothetical Acme Regenerative Media
+brand (B2B agriculture media publisher; chosen so the template can
+demonstrate the cross-link to a photography-treatment file).
+
 ## What's new in v1.5
 
 A new top-level `data-viz/` layer brings **charting and data
