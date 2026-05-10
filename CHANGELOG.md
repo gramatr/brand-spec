@@ -4,6 +4,81 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.2.1] — 2026-05-09
+
+Two coupled additive conventions on the assets layer, surfaced by recent
+brand work:
+
+1. **Asset format preference** — codifies the framing landed in
+   `lean-media-brand` PR #6: PNG-only is operational reality for many
+   brands; auto-tracing PNG to SVG is wrong for typographic wordmarks.
+2. **Wordmark structured metadata** — closes the gap that surfaced when
+   `gramatr-brand` needed a slot to capture the canonical glyph
+   sequence (the macron over the 'a' in `grāmatr`), the ASCII fallback
+   (`gramatr` for CLI / URLs / package names), and the typeface used.
+
+Semver justification: patch bump. Both additions are optional. No
+required fields added. No enum tightened. No existing field renamed or
+removed. v1.2 brands (NEXT90, gramatr-brand, lean-media-brand) validate
+cleanly against v1.2.1 with zero changes.
+
+### Added
+
+- **Asset format preference convention.** Documented in the empty-brand
+  `assets/_manifest.md`, the `assets/` layer description in
+  `brand.yaml`, and the README. PNG (or other raster) is accepted for
+  any logo file; SVG is preferred for future additions or replacements
+  when vector source becomes available. Brands MUST NOT auto-trace PNG
+  to SVG for typographic wordmarks. Recommended convention; not
+  enforced by the validator.
+
+- **Wordmark structured metadata.** Optional `wordmark:` frontmatter
+  block on `assets/_manifest.md`:
+    - `text` — canonical glyph sequence (required when block is present).
+    - `text_ascii` — ASCII fallback (required when `text` contains
+      non-ASCII characters; optional otherwise).
+    - `typeface` — font family the wordmark is set in (optional).
+    - `weight` — numeric font weight (optional).
+    - `case` — `lowercase` | `uppercase` | `titlecase` | `mixed`
+      (optional).
+    - `glyph_notes` — human/agent-readable notes on special characters
+      (optional).
+  Precedence: `text` is canonical and SHOULD be used wherever the
+  consuming surface can render it. `text_ascii` is the fallback ONLY
+  when the surface cannot render the canonical glyphs.
+
+- **README:** new "What's new in v1.2.1" section and a "Wordmark
+  guidance for AI agents" subsection explaining how an agent should
+  consume the wordmark metadata when generating brand-bearing
+  artifacts.
+
+### Backward compatibility
+
+- v1.2 brands (NEXT90, gramatr-brand, lean-media-brand) validate
+  cleanly against v1.2.1 with zero modifications. No required fields
+  added; no fields renamed or removed; no enums tightened.
+- The `wordmark:` block is optional and top-level in
+  `assets/_manifest.md` frontmatter. Brands without a wordmark
+  (icon-only or no logo) omit it cleanly.
+- The format-preference convention is recommended prose, not a
+  validator-enforced rule.
+
+### Migration notes
+
+None. Existing brands work unchanged. Brands MAY adopt the new
+conventions opportunistically:
+- Add the `wordmark:` block when capturing canonical/ASCII spellings
+  becomes useful (especially for brands with non-ASCII wordmarks).
+- Adopt the format-preference framing in their own `assets/_manifest.md`
+  when revisiting asset documentation.
+
+### Validator
+
+The reference validator (`gramatr/brand-spec-validator`) pins to v1.2
+today via its vendored `vendor/brand-spec/brand.yaml`. The validator
+will pick up v1.2.1 on the next maintainer-triggered spec-sync run; no
+validator code changes are required (additive-only schema).
+
 ## [1.2.0] — 2026-05-09
 
 Surfaced by friction items hit while building the second brand
