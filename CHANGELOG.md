@@ -4,6 +4,69 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.3] — 2026-05-10
+
+Patch release. Canonicalizes the design-token name examples in
+`brand.yaml` to a single convention: **`--{category}-{...}`**
+(category-first), e.g., `--color-brand-primary`, `--color-gray-60`,
+`--font-heading`, `--space-md`, `--icon-size-xs`. Prior examples mixed
+two shapes — `--color-brand-blue` (category-first) and `--brand-primary`
+(role-only) — leaving brand authors without a clear precedent to follow.
+
+The category-first convention is the one used in practice by the three
+real brand repos (NEXT90's `color.brand.blue` / `color.bg.dark` /
+`font.body`, Lean Media's `color.brand.primary` / `color.surface.dark` /
+`radius.button`, gramatr-brand's `--font-heading` / `--font-body`) and
+aligns with W3C Design Tokens precedent (category at the root of the
+token path: `color.*`, `font.*`, `space.*`, etc.). gramatr-brand's
+color tokens use a brand-prefix variant (`--gmtr-primary`) — that local
+choice is not the spec's concern; the spec's job is to pick one shape
+for its own examples and stop confusing brand authors with a mixed
+precedent.
+
+No schema changes. No required fields added or renamed. v1.7.0–1.7.2
+brands validate cleanly against v1.7.3 with zero changes. Real brand
+`design-tokens.md` files are NOT touched by this release; they remain
+free to use whatever local convention they prefer.
+
+Closes B6 of [`gramatr/brand-spec#36`](https://github.com/gramatr/brand-spec/issues/36).
+
+### Changed
+
+- `brand.yaml` (`conventions.cross_layer_references.reference_value_types.token.notes`):
+  example expanded from `'--brand-primary'` to
+  `'--color-brand-primary, --font-heading, --space-md'` and explicitly
+  labeled "category-first".
+- `brand.yaml` (cross-layer references `example` block):
+  `target: --color-brand-blue` → `target: --color-brand-primary` (the
+  blue/purple specifics belong in a brand, not the spec example).
+- `brand.yaml` (`data_viz` description prose): inline example updated
+  from `--brand-primary` / `--brand-secondary` to
+  `--color-brand-primary` / `--color-brand-secondary`.
+- `brand.yaml` (`data-viz/colors.md` canonical role-to-token table):
+  all seven role rows updated to category-first form
+  (`--color-brand-primary`, `--color-brand-secondary`,
+  `--color-surface-subtle`, `--color-semantic-success`,
+  `--color-semantic-error`, `--color-gray-60`).
+- `brand.yaml` (`image-gen-design-token-references-resolve` rule prose):
+  inline example updated from `--brand-primary` to
+  `--brand-secondary` → `--color-brand-primary` to `--color-brand-secondary`.
+
+### Brand-side observations (not fixed here)
+
+The three real brand repos use three different local token conventions:
+
+- **NEXT90:** dotted (`color.brand.blue`, `font.body`) — no `--` prefix.
+- **Lean Media:** dotted (`color.brand.primary`, `radius.button`) — no `--` prefix.
+- **gramatr-brand:** CSS custom properties (`--gmtr-primary`,
+  `--font-heading`) with a mix of brand-prefix (color) and
+  category-first (typography).
+
+This is a brand-side authoring inconsistency, not a spec gap. The spec
+does not require brands to use any particular token-name shape; it only
+needs its own examples to commit to one. Each brand may choose to
+reconcile its internal mix in its own time. No spec change required.
+
 ## [1.7.2] — 2026-05-10
 
 Fix B3 of [`gramatr/brand-spec#36`](https://github.com/gramatr/brand-spec/issues/36).
@@ -52,6 +115,7 @@ v1.5 CHANGELOG entry).
   emitted by `gramatr/brand-spec-validator`. README rule list
   updated to match. Historical v1.5 CHANGELOG entry left as the
   as-shipped record.
+
 
 ## [1.7.0] — 2026-05-10
 
