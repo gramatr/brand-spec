@@ -4,6 +4,58 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.6] — 2026-05-11
+
+Patch release. Adds an `exempt_fields:` declaration to
+`conventions.cross_layer_references` so that field names matching the
+v1.7.0 `field_name_pattern` regex (`^[a-z_]+_refs?$`) but carrying
+non-resolvable slug values are formally exempted from
+target-resolution. Closes #46.
+
+**Problem.** The v1.7.0 cross-layer-reference convention's
+`field_name_pattern` regex is intentionally broad — any frontmatter
+field ending in `_ref` or `_refs` is treated as a cross-layer
+reference whose target MUST resolve to a layer / file / token /
+path-with-fragment / url. But `applies_to_refs:` (the canonical
+v1.7.0 form of the legacy v1.3 `applies_to:` field) carries
+**channel slugs** (`website`, `linkedin-company-page`,
+`marketing-emails`), not file/layer/token/url targets. Slug
+vocabulary is governed by the orthogonal v1.3
+`conventions.applies_to_baseline_slugs` convention with its own
+warn-on-drift validation. Naïvely applying
+`cross-layer-ref-target-resolves` to `applies_to_refs` produced 9
+false errors on lean-media-brand (validator v0.3.0,
+[brand-spec-validator PR #20](https://github.com/gramatr/brand-spec-validator/pull/20)) —
+the validator shipped a workaround `NON_RESOLVING_REF_FIELDS` set
+hard-coded in rule code while waiting for the spec to declare the
+exemption canonically.
+
+**Fix.** New `conventions.cross_layer_references.exempt_fields:`
+list. Each entry declares (a) the field name, (b) why its values
+do not resolve as cross-layer-reference targets, (c) the convention
+that DOES govern its value-vocabulary. v1.7.5 ships with one entry:
+
+- `applies_to_refs` — values are channel slugs governed by the v1.3
+  `applies_to_baseline_slugs` convention.
+
+The exempt-fields list is the documented home for similar future
+cases (e.g., a hypothetical `themes_refs` whose values were brand
+theme slugs rather than file paths). Authors and validator
+implementers SHOULD consult this list before assuming a
+regex-matching field is a target-resolving cross-layer reference.
+
+**Validator impact.** Validators MUST read
+`conventions.cross_layer_references.exempt_fields[].name` and skip
+`cross-layer-ref-target-resolves` for those field names. The
+hard-coded `NON_RESOLVING_REF_FIELDS` set in brand-spec-validator
+v0.3.0 can be replaced by reading from the spec — tracked as a
+separate validator follow-up.
+
+No schema changes. No required fields added or renamed. No
+field-name pattern change (which would have been a MINOR / breaking
+change requiring brands to rename `applies_to_refs`). v1.7.0–1.7.4
+brands validate cleanly against v1.7.5 with zero changes.
+
 ## [1.7.5] — 2026-05-11
 
 Patch release. Closes [#45](https://github.com/gramatr/brand-spec/issues/45).
