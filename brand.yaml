@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.7.5
+contract_version: 1.7.6
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -356,6 +356,47 @@ conventions:
           assets_manifest_ref: assets/_manifest.md
           priority_layers_refs: [identity, voice, vocabulary]
           forbidden_chart_types_refs: [data-viz/chart-types.md#forbidden]
+
+    # 1a. Exempt fields — name matches `field_name_pattern` but values
+    # are NOT cross-layer references; target-resolution does not apply.
+    exempt_fields:
+      notes: |
+        (v1.7.5) The `field_name_pattern` regex `^[a-z_]+_refs?$` is
+        intentionally broad — it captures any frontmatter field whose
+        name ends in `_ref` or `_refs`. A small number of canonical
+        field names match the regex but carry domain-specific slug
+        values governed by a different convention; their targets do
+        NOT resolve as layer/file/token/url and validators MUST skip
+        the `cross-layer-ref-target-resolves` check for these fields.
+
+        This list is the canonical, declarative home for such
+        exemptions. Validator implementations MUST read it and exempt
+        the listed field names from target resolution. Any future
+        `*_refs` field whose values are slugs (rather than file/layer/
+        token/url targets) belongs here, paired with the convention
+        that owns its value-vocabulary.
+
+        Backstory: surfaced by validator v0.3.0 (brand-spec-validator
+        PR #20) on lean-media-brand — naïve target-resolution against
+        `applies_to_refs` produced 9 false errors (channel slugs like
+        `website`, `linkedin-company-page` do not resolve as files or
+        layers). Encoded validator-side as `NON_RESOLVING_REF_FIELDS`
+        until the spec declared the exemption canonically here.
+      fields:
+        - name: applies_to_refs
+          reason: |
+            Values are channel/context slugs (e.g., `website`,
+            `linkedin-company-page`, `marketing-emails`) — not paths,
+            layers, tokens, or URLs. Target-resolution is meaningless
+            for these values.
+          governed_by: applies_to_baseline_slugs
+          governance_notes: |
+            Slug vocabulary is owned by the v1.3
+            `conventions.applies_to_baseline_slugs` convention, which
+            defines the baseline kebab-case slugs and the warn-on-drift
+            validation. Brands MAY extend the baseline with
+            brand-specific slugs; the v1.3 convention governs both the
+            baseline and the drift-warning behavior.
 
     # 2. Resolvable target types
     reference_value_types:
