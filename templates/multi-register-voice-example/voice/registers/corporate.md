@@ -1,6 +1,6 @@
 ---
 register: corporate
-applies_to: [website, blog, marketing-emails, sales-decks, onboarding, linkedin-company-page]
+applies_to_refs: [website, blog, marketing-emails, sales-decks, onboarding, linkedin-company-page]
 default_tone: confident-direct
 reading_level: professional
 perspective: second-person

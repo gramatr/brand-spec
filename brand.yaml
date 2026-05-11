@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.7.3
+contract_version: 1.7.4
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -316,6 +316,15 @@ conventions:
       Authoritative shape of cross-layer references in brand-spec.
       Authors pick the naming convention by default and opt into the
       structured block only when richer metadata is required.
+
+      (v1.7.4) The spec's own templates and brand.yaml examples now
+      demonstrate this convention end-to-end — `templates/empty-brand`
+      uses `priority_layers_refs:`, the multi-register voice example
+      uses `applies_to_refs:`, and the image-generation refs
+      (`photography_treatment_ref`, `assets_manifest_ref`,
+      `design_tokens_ref`) have been convention-conformant since
+      v1.6.0 and require no migration. Legacy field names continue
+      to validate per `backward_compat` below.
 
     # 1. Frontmatter naming convention (Option B)
     field_name_pattern:

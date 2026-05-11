@@ -1,7 +1,7 @@
 ---
 schema_version: 1
 summary: "TODO — one paragraph: who the brand is, who it serves, how it sounds. This is the first thing an AI agent reads about the brand."
-priority_layers:
+priority_layers_refs:
   - identity
   - voice
   - vocabulary

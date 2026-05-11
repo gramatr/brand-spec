@@ -1,6 +1,6 @@
 ---
 register: engineering
-applies_to: [code-comments, agent-prompts, technical-docs, github-issues, error-messages, readmes]
+applies_to_refs: [code-comments, agent-prompts, technical-docs, github-issues, error-messages, readmes]
 default_tone: direct-specific
 reading_level: technical
 perspective: third-person
