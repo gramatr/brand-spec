@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.7.0
+contract_version: 1.7.1
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -219,7 +219,7 @@ conventions:
       name:
         type: string
         required: true
-        notes: "human-readable methodology name (e.g., 'Know Your Customer (KYKC)')"
+        notes: "human-readable methodology name (e.g., 'Know Your Kingdom + Know Your Customer (KYKC)')"
       short_name:
         type: string
         required: false

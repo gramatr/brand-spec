@@ -4,6 +4,38 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.1] — 2026-05-10
+
+Patch release. Canonicalizes the **KYKC** acronym expansion across
+`brand.yaml`, `CHANGELOG.md`, `README.md`, and the `journey-example`
+template. Three different expansions had drifted in across v1.4–v1.7
+(`Know Your Customer`, `Know Your Kingdom + Know Your Customer`, and
+the example-only `Know Your Customer (KYKC)` form in the
+`methodology_provenance` notes). All references now use the canonical
+**Know Your Kingdom + Know Your Customer**, matching the load-bearing
+prose in `templates/journey-example/journey/_framework.md` body which
+documents both halves of the discipline (the inventory side and the
+cognition side).
+
+No schema changes. No required fields added or renamed. v1.7.0 brands
+validate cleanly against v1.7.1 with zero changes.
+
+Closes B3 of [`gramatr/brand-spec#36`](https://github.com/gramatr/brand-spec/issues/36).
+
+### Changed
+
+- `contract_version` bumped to `1.7.1`.
+- `brand.yaml` (`conventions.methodology_provenance.fields.name.notes`):
+  example value updated from `'Know Your Customer (KYKC)'` to
+  `'Know Your Kingdom + Know Your Customer (KYKC)'`.
+- `CHANGELOG.md` (v1.4.0 entry, methodology attribution paragraph):
+  `**KYKC (Know Your Customer)**` → `**KYKC (Know Your Kingdom + Know Your Customer)**`.
+- `README.md` ("What's new in v1.4" section): same expansion update.
+- `templates/journey-example/journey/_framework.md`
+  (`methodology_provenance.name` frontmatter): `"Know Your Customer (KYKC)"`
+  → `"Know Your Kingdom + Know Your Customer (KYKC)"`. The body of this
+  file (which already used the canonical expansion) is unchanged.
+
 ## [1.7.0] — 2026-05-10
 
 Closes
@@ -735,7 +767,7 @@ currently have a `journey/` directory and the layer is
 `recommended: true, required: false`.
 
 This release introduces the first methodology brought into brand-spec
-with explicit, structured attribution. **KYKC (Know Your Customer)** and
+with explicit, structured attribution. **KYKC (Know Your Kingdom + Know Your Customer)** and
 **CognitiveJourney** were developed by Brian Handrigan at the grāmatr
 digital marketing agency circa 2005 and refined across 20 years of
 agency, adtech, and AI work. The grāmatr brand identity has been

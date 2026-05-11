@@ -3,7 +3,7 @@ type: framework
 version: "1.0"
 status: sample
 methodology_provenance:
-  name: "Know Your Customer (KYKC)"
+  name: "Know Your Kingdom + Know Your Customer (KYKC)"
   short_name: KYKC
   originator: "Brian Handrigan"
   developed_at: "grāmatr (digital marketing agency)"

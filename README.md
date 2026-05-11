@@ -329,7 +329,7 @@ for a worked example using a hypothetical brand (Acme Analytics).
 
 ## What's new in v1.4
 
-A new top-level `journey/` layer brings **KYKC (Know Your Customer)**
+A new top-level `journey/` layer brings **KYKC (Know Your Kingdom + Know Your Customer)**
 and the **CognitiveJourney** artifact into brand-spec as first-class
 concepts. KYKC is the discipline; CognitiveJourney is the structured
 shape that operationalizes it. Both ship inline as the new layer (NOT a
