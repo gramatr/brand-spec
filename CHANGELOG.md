@@ -4,6 +4,73 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.9.0] — 2026-05-11
+
+Minor release. Formalizes two cross-layer-reference fields that
+brands already use in practice but the per-layer schemas didn't
+enumerate. Second entry of the [v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+("proposal 2") to land. No new layers, no new files, no schema
+shape changes — both fields already validate under the v1.7
+`^[a-z_]+_refs?$` convention; this release simply elevates them
+from convention-implicit to schema-explicit.
+
+### What's added
+
+**1. `data_viz_refs:` on `messaging/channel-{channel}.md`.**
+Optional array of paths into `data-viz/`. Lets a channel guide
+declare which data-viz files govern charting on that channel.
+Evidence: next90-brand uses this on three channels (deck, social,
+landing-page), with 3–4 entries each.
+
+**2. `design_tokens_ref:` on every `data-viz/*.md` file.**
+Optional scalar path to the brand's design-tokens source (
+conventionally `design-tokens.md`). Added to the frontmatter
+schemas of `_framework.md`, `colors.md`, `chart-types.md`,
+`axes-and-grid.md`, `annotations.md`, `numbers.md`, and
+`tables.md` — all 7 file slots the layer declares. Formalizes
+what the layer's prose at the top of `data_viz:` has always
+said ("Color tokens live in `design-tokens.md` and this layer
+assigns DATA ROLES to those token names"). Evidence:
+next90-brand uses this on 4 of 7 data-viz files.
+
+### Cardinality note
+
+The v1.7 cross-layer-ref convention treats `*_ref` (singular,
+scalar) and `*_refs` (plural, array) as distinct fields with
+distinct cardinalities. v1.9.0 declares `data_viz_refs:` (plural)
+on channel guides because brands typically reference multiple
+data-viz files per channel; brands that only need one MAY use
+`data_viz_ref:` (singular) instead — both validate under the
+convention. `design_tokens_ref:` is singular because there is
+typically one design-tokens file per brand.
+
+### Why this is in 1.9 and not 1.8.1
+
+Schema declarations under `layers:` constitute a contract
+expansion (new validator-discoverable surface, even though the
+underlying fields already validated). v1.8.x is reserved for
+baseline-list grows and other strictly non-schema changes.
+v1.9.0 is the next minor where layer schemas can grow.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.8.0 → 1.9.0.
+- `brand.yaml` (`layers.messaging.directories[].contents[channel-{channel}.md].frontmatter`):
+  added `data_viz_refs:` (array, optional).
+- `brand.yaml` (`layers.data_viz.directories[].contents[]`):
+  added `design_tokens_ref:` (string, optional) to all 7 file
+  schemas (_framework, colors, chart-types, axes-and-grid,
+  annotations, numbers, tables).
+
+### Backward compatibility
+
+Purely additive. No fields renamed, no required-field tightening,
+no shape changes. Brands validating cleanly against v1.8.0
+continue to validate cleanly against v1.9.0. Validators that
+already resolve `*_refs?$` fields under the v1.7 convention need
+no code change; the spec change just makes the fields
+discoverable from per-layer schemas instead of from prose.
+
 ## [1.8.0] — 2026-05-11
 
 Minor release. Expands `conventions.applies_to_baseline_slugs.technical`

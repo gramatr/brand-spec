@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.8.0
+contract_version: 1.9.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -1354,6 +1354,23 @@ layers:
               format:          { type: string, required: false, notes: "e.g., 'print/pdf'" }
               primary_platform: { type: string, required: false, notes: "e.g., 'linkedin' for social" }
               formats:         { type: array,  required: false, items: { type: string } }
+              data_viz_refs:
+                type: array
+                required: false
+                items: { type: string }
+                notes: |
+                  (v1.9.0) Optional list of `data-viz/*` files that
+                  govern charting/data-visualization on this channel.
+                  Each entry is a path relative to brand root (e.g.,
+                  `data-viz/colors.md`, `data-viz/chart-types.md`,
+                  `data-viz/annotations.md`). Resolves under the v1.7
+                  cross-layer-ref convention; validators verify each
+                  entry exists. Formalizes a pattern observed across
+                  3 next90-brand channel guides (deck, social,
+                  landing-page). Brands that only need to reference a
+                  single data-viz file MAY use `data_viz_ref:`
+                  (singular, scalar) instead — both forms validate
+                  under the v1.7 convention.
             notes: |
               Channel slugs are brand-defined (e.g., deck, email,
               landing-page, one-pager, social, webinar, podcast,
@@ -1558,6 +1575,7 @@ layers:
               status:       { type: string,  required: false }
               last_updated: { type: string,  required: false, format: date, notes: "YYYY-MM-DD" }
               confidence:   { type: string,  required: false, enum: [high, medium, low], notes: "author's confidence in the layer's rules; mirrors the v1.3 register confidence convention" }
+              design_tokens_ref: { type: string, required: false, notes: "(v1.9.0) Optional path to the brand's design-tokens source file (conventionally `design-tokens.md`). Resolves under the v1.7 cross-layer-ref convention. Formalizes the relationship documented in the layer prose above." }
             body_sections_recommended:
               - "What this layer covers"
               - "When to use this layer vs design-tokens"
@@ -1578,6 +1596,7 @@ layers:
               version:      { type: string,  required: false }
               status:       { type: string,  required: false }
               last_updated: { type: string,  required: false, format: date }
+              design_tokens_ref: { type: string, required: false, notes: "(v1.9.0) Optional path to the brand's design-tokens source file. Resolves under the v1.7 cross-layer-ref convention." }
               role_taxonomy:
                 type: string
                 required: false
@@ -1633,6 +1652,7 @@ layers:
               version:      { type: string,  required: false }
               status:       { type: string,  required: false }
               last_updated: { type: string,  required: false, format: date }
+              design_tokens_ref: { type: string, required: false, notes: "(v1.9.0) Optional path to the brand's design-tokens source file. Resolves under the v1.7 cross-layer-ref convention." }
               allowed:
                 type: array
                 required: false
@@ -1678,6 +1698,7 @@ layers:
               version:      { type: string,  required: false }
               status:       { type: string,  required: false }
               last_updated: { type: string,  required: false, format: date }
+              design_tokens_ref: { type: string, required: false, notes: "(v1.9.0) Optional path to the brand's design-tokens source file. Resolves under the v1.7 cross-layer-ref convention." }
               origin_policy:
                 type: string
                 required: false
@@ -1708,6 +1729,7 @@ layers:
               version:               { type: string,  required: false }
               status:                { type: string,  required: false }
               last_updated:          { type: string,  required: false, format: date }
+              design_tokens_ref:     { type: string, required: false, notes: "(v1.9.0) Optional path to the brand's design-tokens source file. Resolves under the v1.7 cross-layer-ref convention." }
               source_citation_required:
                 type: boolean
                 required: false
@@ -1745,6 +1767,7 @@ layers:
               version:      { type: string,  required: false }
               status:       { type: string,  required: false }
               last_updated: { type: string,  required: false, format: date }
+              design_tokens_ref: { type: string, required: false, notes: "(v1.9.0) Optional path to the brand's design-tokens source file. Resolves under the v1.7 cross-layer-ref convention." }
               locale:
                 type: string
                 required: false
@@ -1782,6 +1805,7 @@ layers:
               version:      { type: string,  required: false }
               status:       { type: string,  required: false }
               last_updated: { type: string,  required: false, format: date }
+              design_tokens_ref: { type: string, required: false, notes: "(v1.9.0) Optional path to the brand's design-tokens source file. Resolves under the v1.7 cross-layer-ref convention." }
             body_sections_recommended:
               - "Header treatment"
               - "Row striping (or no striping)"
