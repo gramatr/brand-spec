@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.13.0
+contract_version: 1.14.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -227,6 +227,73 @@ conventions:
       - founder-guest-articles
       - podcast-intro-outro
       - webinar-scripts
+
+  # (v1.14.0) Known drift forms for messaging channel slugs — paired with
+  # their canonical kebab-cased hyphenated singular forms. Distinct from
+  # `applies_to_baseline_slugs` above: that block enumerates the *plural*
+  # class-name slugs used inside `applies_to:` arrays on voice registers
+  # (e.g., `one-pagers`, `landing-pages`). This block governs the
+  # *singular* slug used in `messaging/channel-{channel}.md` frontmatter's
+  # `channel:` field and in the filename `channel-{slug}.md`.
+  #
+  # Scope. v1.14.0 ships with a single entry — `onepager → one-pager` —
+  # the only known drift form observed across the three production
+  # brands (next90-brand, gramatr-brand, lean-media-brand). Future drift
+  # forms get added here as discovered. A full positive baseline of
+  # canonical channel slugs (parallel to `applies_to_baseline_slugs`) is
+  # tracked as a separate follow-up RFC item.
+  channel_slug_canonicalizations:
+    notes: |
+      Each entry pairs a known non-canonical drift form with its
+      canonical replacement. Validators MAY emit info-severity
+      advisories when a drift form is observed in either:
+
+      - `frontmatter.channel:` on `messaging/channel-{channel}.md`
+        (e.g., lean-media-brand's pre-v1.14 `channel: onepager`).
+      - The filename itself (`messaging/channel-onepager.md` →
+        canonical `messaging/channel-one-pager.md`).
+
+      Two associated validator rules (deferred to a future validator
+      release per the spec's established pattern):
+
+      - `messaging-channel-slug-canonical` (info/warn) — emits an
+        advisory when `frontmatter.channel:` matches a known drift
+        form. Recommendation in the advisory names the canonical
+        form from this registry.
+      - `messaging-channel-filename-matches-slug` (info/warn) —
+        when `frontmatter.channel:` is set, the file's basename
+        SHOULD equal `channel-{channel}.md` (existing pattern at
+        `layers.messaging.directories[].contents[].pattern`).
+        Combined with the canonical-form check, this catches both
+        of next90-brand's pre-v1.14 cases (filename uses the drift
+        form, frontmatter uses the canonical) and lean-media-brand's
+        case (filename and frontmatter both use the drift form).
+
+      Brands MAY migrate at their own pace; no error severity. The
+      drift forms continue to validate; they just surface as
+      advisories so the inconsistency is visible.
+    canonicalizations:
+      - drift: onepager
+        canonical: one-pager
+        added_in: 1.14.0
+        notes: |
+          Observed in:
+          - lean-media-brand/messaging/channel-onepager.md:2 —
+            `channel: onepager`.
+          - Filenames `channel-onepager.md` in both
+            lean-media-brand and next90-brand.
+          - next90-brand example filenames `onepager-medicare-aep.md`,
+            `onepager-hvac-homeservices.md`,
+            `onepager-dtc-subscription.md` (and the parallel
+            convention applies to `examples/{example_type}-{slug}.md`
+            filenames where `example_type` matches a channel slug).
+
+          The hyphenated singular `one-pager` is the canonical form,
+          matching the form used throughout the spec's prose
+          (`brand.yaml:1545, 2500, 2556`) and the singular reading
+          of the plural baseline slug `one-pagers` (which lives in
+          `applies_to_baseline_slugs.sales` for a different field
+          family — voice register `applies_to:` arrays).
 
   # (v1.4) Cross-cutting frontmatter convention for attributing the
   # origin of a methodology, framework, or convention referenced or
@@ -1545,6 +1612,20 @@ layers:
               landing-page, one-pager, social, webinar, podcast,
               direct-mail). One file per channel the brand actively
               publishes through.
+
+              (v1.14.0) Canonical slug form is kebab-cased and
+              hyphenated where multi-word (e.g., `one-pager`,
+              `landing-page`, not `onepager` or `landingpage`). The
+              file's basename SHOULD encode the canonical form
+              (`channel-{channel}.md` per the pattern above) and
+              `frontmatter.channel:` SHOULD use it too. Known drift
+              forms are listed in
+              `conventions.channel_slug_canonicalizations`; brands
+              MAY migrate at their own pace — drift forms continue
+              to validate but surface as info-severity advisories
+              under the deferred validator rules
+              `messaging-channel-slug-canonical` and
+              `messaging-channel-filename-matches-slug`.
 
   # --- PERSONAS ----------------------------------------------------------
   personas:
