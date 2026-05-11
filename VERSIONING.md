@@ -46,6 +46,12 @@ Between v1.0 and v1.3, the schema bumped through four minor versions in a single
 
 Going forward: if a PR doesn't introduce a fundamentally new capability domain, it bumps the patch number, full stop.
 
+## Tagging
+
+Every released version gets a git tag at the merge SHA. Tag name matches `contract_version` exactly (`v1.6.1`, `v1.4.0`, etc.). Without tags, downstream consumers (the validator, brand repos pinning a version, CI) have no reliable way to reference a specific release — they end up syncing from `main` and inheriting whatever's there at the moment, which defeats the point of versioning.
+
+Detailed steps for tagging on merge live in [`CONTRIBUTING.md`](./CONTRIBUTING.md). The 9 versions released between v1.0.0 and v1.6.1 were tagged retroactively; v1.6.2+ ships with the tag at merge time.
+
 ## Validator versioning
 
 `gramatr/brand-spec-validator` follows its own semver track. Today it's at v0.1.x — pre-1.0 because the validator's API surface (`validateBrand()` signature, `ValidationResult` shape) hasn't been hardened yet. The validator's CHANGELOG and `package.json` description document which `brand-spec` version each release supports. When the validator API stabilizes, it bumps to v1.0.0; until then, expect v0.1.x patches as the spec evolves.
