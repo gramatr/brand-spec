@@ -19,6 +19,24 @@ Contributions to `brand-spec` are welcome. The spec is intentionally minimal and
 
 `schema_version` is an integer that bumps for breaking changes (renames, removals, type changes, required-level tightening). `contract_version` is a semver string for finer-grained tracking.
 
+See [`VERSIONING.md`](./VERSIONING.md) for what counts as patch / minor / major and the discipline that governs version bumps.
+
+## Release discipline — tag every version
+
+**Every merged version MUST be tagged at the merge SHA.** Tags are how downstream consumers (the validator's vendored sync, brands that pin to a version, CI that validates against a specific version) reliably reference a release. An untagged main HEAD is not a version anyone can rely on.
+
+Steps when a version-bumping PR merges:
+
+```bash
+git checkout main && git pull
+git tag -a v<X.Y.Z> -m "v<X.Y.Z> — <one-line summary matching CHANGELOG entry>" <merge-sha>
+git push origin v<X.Y.Z>
+```
+
+The tag name MUST match the `contract_version` field in `brand.yaml` for that release. The CHANGELOG entry justifies the specific bump per [`VERSIONING.md`](./VERSIONING.md).
+
+If a PR merges without a version bump (docs-only, internal cleanup), no tag is required. Anything that touches `brand.yaml`'s `contract_version` requires a tag at the merge SHA.
+
 ## License
 
 By contributing you agree your contribution will be licensed under the MIT License (see `LICENSE`).
