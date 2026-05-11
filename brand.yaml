@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.11.0
+contract_version: 1.12.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -633,6 +633,75 @@ conventions:
             notes: |
               Used by `conventions.frontmatter.fields.source_authority.properties.upstream`.
               Singular (`*_ref`) — one path or URL.
+
+  # ---------------------------------------------------------------------------
+  # Prompt sub-variant fields (v1.12.0)
+  # ---------------------------------------------------------------------------
+  # Pattern for declaring sub-variant discriminators on
+  # `prompts/{content-type}.md` files when a brand has multiple prompts of
+  # the same `content_type:` that differ in structure or shape. Two patterns
+  # are sanctioned because they encode semantically distinct things and both
+  # appear in production today (next90-brand uses both — `deck_type:` for
+  # deck variants, `format:` for thought-leadership variants).
+  prompt_sub_variant_fields:
+    notes: |
+      Two sub-variant patterns are sanctioned on `prompts/` files:
+
+      1. **content-type-typed** — an additional frontmatter field named
+         `<content_type>_type` where the prefix matches the file's
+         `content_type:` value exactly. Used to discriminate content-type
+         sub-variants (different content structures within the same
+         content_type bucket). Example: a prompt with
+         `content_type: deck` declares `deck_type: conference` (or
+         `deck_type: qbr`, `deck_type: sales-pitch`). Observed in
+         next90-brand/prompts/deck-{conference,qbr,sales}.md.
+
+      2. **format-typed** — the literal field `format:`. Used to
+         discriminate format or length variants (same content type,
+         different shape). Example: a prompt with
+         `content_type: thought-leadership` declares
+         `format: longform`. Observed in
+         next90-brand/prompts/thought-leadership-longform.md.
+
+      Both patterns are optional. A prompt with no sub-variant carries
+      neither field. Brands SHOULD pick one pattern per `content_type`
+      (don't mix `deck_type:` and `format:` on the same file); the spec
+      permits mixing but validators MAY emit an info-severity advisory
+      when both appear on the same file.
+
+      Filename convention. When a sub-variant is declared, the
+      canonical filename uses the composite form
+      `{content_type}-{variant}.md` (e.g., `deck-conference.md`,
+      `thought-leadership-longform.md`). Brands MAY also use the
+      simple `{content_type}.md` form even when a sub-variant is
+      declared, but the composite form is preferred — it makes the
+      sub-variant discoverable from the filename alone.
+
+    field_name_patterns:
+      - semantic: content-type-typed
+        name_pattern: "^[a-z_]+_type$"
+        constraint: |
+          Field-name prefix (everything before `_type`) MUST equal
+          `frontmatter.content_type` exactly. E.g., `deck_type` is
+          valid only on a file with `content_type: deck`. Validators
+          MAY emit an error when the prefix and the content_type
+          disagree (rule:
+          `prompt-sub-variant-field-prefix-matches-content-type`,
+          deferred to a future validator release).
+        notes: |
+          Value is a brand-defined slug naming the sub-variant. No
+          baseline taxonomy in v1.12.0 — brands invent their own
+          variant slugs (`conference`, `qbr`, `sales-pitch`, etc.).
+      - semantic: format-typed
+        name: format
+        constraint: |
+          Literal field name. Value is a brand-defined format/length
+          slug (e.g., `longform`, `shortform`, `social-thread`,
+          `single-card`).
+        notes: |
+          Use when the sub-variant is about shape rather than content
+          classification — i.e., the same content_type rendered at
+          different lengths or shapes.
 
 # -----------------------------------------------------------------------------
 # Layers
@@ -2418,22 +2487,53 @@ layers:
     required: false
     recommended: true
     description: |
-      Agent brief templates — one per content type. Each prompt names the
-      brand files it expects to be attached and (when validated) the
-      examples that anchor it. Content-type slugs are brand-defined
-      (e.g., one-pager, email-sequence, deck-sales).
+      Agent brief templates — one per content type (or per content-type
+      sub-variant). Each prompt names the brand files it expects to be
+      attached and (when validated) the examples that anchor it.
+      Content-type slugs are brand-defined (e.g., one-pager,
+      email-sequence, deck).
+
+      (v1.12.0) Sub-variant disambiguation. Brands with multiple
+      prompts of the same `content_type:` that differ in structure or
+      shape MAY use the sub-variant patterns documented under
+      `conventions.prompt_sub_variant_fields` — either
+      `<content_type>_type:` for content-structure variants or
+      `format:` for shape/length variants. The canonical filename
+      for a sub-typed prompt is the composite
+      `{content_type}-{variant}.md` (e.g., `deck-conference.md`).
     directories:
       - path: prompts/
         contents:
           - pattern: "{content-type}.md"
             required: false
             recommended: true
+            notes: |
+              (v1.12.0) When a sub-variant is declared in frontmatter
+              (`<content_type>_type:` or `format:`), the canonical
+              filename uses the composite form
+              `{content_type}-{variant}.md`. The simple
+              `{content_type}.md` pattern documented here covers both
+              shapes — the variant slug appears as a hyphenated
+              extension of the content-type slug in the filename.
+              See `conventions.prompt_sub_variant_fields`.
             frontmatter:
               prompt_type:  { type: string, required: true, const: agent-brief-template }
               content_type: { type: string, required: true, notes: "matches the prompt's content-type slug" }
               version:      { type: string, required: false }
               validated:    { type: boolean, required: false, notes: "true when at least one example exists and passed human review" }
               examples:     { type: array,  required: false, items: { type: string }, notes: "paths to examples/ files that anchor this prompt" }
+              format:
+                type: string
+                required: false
+                notes: |
+                  (v1.12.0) Optional format/length sub-variant
+                  discriminator. Used when the prompt is a shape
+                  variant of its content_type (e.g.,
+                  `content_type: thought-leadership` + `format: longform`).
+                  See `conventions.prompt_sub_variant_fields` for the
+                  full pattern definition including the alternative
+                  `<content_type>_type:` shape and filename convention.
+                  Brand-defined free-form slug.
 
   # --- DESIGN SPECS ------------------------------------------------------
   design_specs:

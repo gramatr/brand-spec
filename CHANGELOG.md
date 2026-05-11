@@ -4,6 +4,91 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.12.0] — 2026-05-11
+
+Minor release. Sanctions two sub-variant discriminator field
+patterns on `prompts/{content-type}.md` files. Fifth entry of the
+[v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+("proposal 5") to land.
+
+### The gap
+
+Brands with multiple prompts of the same `content_type:` need a
+way to disambiguate sub-variants. next90-brand uses two different
+patterns today, both functional but neither sanctioned by the
+spec:
+
+- `prompts/deck-{conference,qbr,sales}.md` all have
+  `content_type: deck` and disambiguate via
+  `deck_type: {conference, qbr, sales-pitch}`.
+- `prompts/thought-leadership-longform.md` has
+  `content_type: thought-leadership` and disambiguates via
+  `format: longform`.
+
+The two shapes are semantically distinct: the first is a
+content-structure classifier ("this deck IS a conference deck —
+different content rules apply"), the second is a shape/length
+classifier ("same content_type, different format"). Both are
+legitimate and should remain accepted.
+
+### The fix
+
+New top-level convention block:
+`conventions.prompt_sub_variant_fields`. Declares both patterns:
+
+1. **content-type-typed**: field name matches
+   `^[a-z_]+_type$`; prefix MUST equal `frontmatter.content_type`.
+   Validators MAY emit an error when the prefix and the
+   content_type disagree (rule
+   `prompt-sub-variant-field-prefix-matches-content-type`,
+   deferred to a future validator release).
+2. **format-typed**: literal field `format:`. Values are
+   brand-defined format/length slugs.
+
+Brands SHOULD pick one pattern per `content_type`; mixing both on
+the same file is permitted but discouraged (info-severity
+advisory if both appear).
+
+### Filename convention
+
+When a sub-variant is declared, the canonical filename uses the
+composite form `{content_type}-{variant}.md` (e.g.,
+`deck-conference.md`, `thought-leadership-longform.md`). The
+simple `{content_type}.md` pattern already declared on
+`prompts/` covers both shapes — the variant slug is encoded as
+a hyphenated extension of the content-type slug. Documented in
+the `pattern:` notes under `layers.prompts`.
+
+### Per-layer schema change
+
+`layers.prompts.directories[].contents[].frontmatter` adds the
+literal `format:` field as optional string. The dynamic
+`<content_type>_type:` field name cannot be declared as a static
+schema field; it's defined by the convention block and
+referenced from the per-layer notes.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.11.0 → 1.12.0.
+- `brand.yaml` (new top-level `conventions.prompt_sub_variant_fields`):
+  declares the two sub-variant patterns with field-name regex,
+  prefix constraint, semantic notes, and filename convention.
+- `brand.yaml` (`layers.prompts.description`): extended to mention
+  sub-variants and reference the convention block.
+- `brand.yaml` (`layers.prompts.directories[].contents[]`): added
+  pattern-level notes documenting the composite filename;
+  added `format:` to frontmatter as optional string field.
+
+### Backward compatibility
+
+Purely additive. No fields renamed, no required-field tightening.
+v1.11.x brands validate cleanly against v1.12.0 with zero changes.
+Validators that currently accept undeclared `*_type` /
+`format:` fields under permissive defaults continue to behave
+identically — the convention block makes the pattern discoverable
+and enables future validator rules without breaking current
+behavior.
+
 ## [1.11.0] — 2026-05-11
 
 Minor release. Declares a new optional file slot:
