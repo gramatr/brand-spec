@@ -308,7 +308,7 @@ to the rule's purpose:
 - `data-viz-annotation-source-required` (warn) — when a brand sets
   `source_citation_required: true`, downstream artifact generators
   must attach citations to numeric annotations.
-- `data-viz-framework-recommended` (info) — when any data-viz file
+- `data-viz-framework-presence` (info) — when any data-viz file
   exists, `_framework.md` SHOULD also exist.
 
 Migration recommendation for brands today carrying duplicate chart

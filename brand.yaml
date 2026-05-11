@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.7.0
+contract_version: 1.7.1
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -2467,7 +2467,7 @@ validation:
       blockquote `> Quoted:` callouts or `examples/` reference
       output are exempt.
 
-  - id: data-viz-framework-recommended
+  - id: data-viz-framework-presence
     severity: info
     rule: |
       (v1.5) When any file under `data-viz/` exists,

@@ -4,6 +4,36 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.1] — 2026-05-10
+
+Closes B2 of
+[`gramatr/brand-spec#36`](https://github.com/gramatr/brand-spec/issues/36)
+— rule-ID drift between spec and validator. The spec declared the
+v1.5 rule as `data-viz-framework-recommended`; the validator
+implementation in `gramatr/brand-spec-validator` (v0.2.0 body-parse
+subsystem) emits issues with rule ID `data-viz-framework-presence`.
+Same intent, two names — a contract bug surfaced by the deep audit
+on epic #13 (comment-4417090502).
+
+Semver justification: **PATCH bump (per `VERSIONING.md`).** Pure rule
+rename to align the spec with the canonical validator emission. No
+new behavior, no new field, no enum change. v1.7.0 brands continue
+to validate identically — the rule body and severity are unchanged;
+only the ID label moves. Picked the validator-side name (`presence`)
+because it carries better semantics (the rule actually checks for
+presence of expected topics in `_framework.md`) and appears in more
+load-bearing locations (validator source, tests, validator
+CHANGELOG) than the spec-side name (spec body, README, historical
+v1.5 CHANGELOG entry).
+
+### Changed
+
+- `validation:` rule `data-viz-framework-recommended` renamed to
+  `data-viz-framework-presence` in `brand.yaml` to match the rule ID
+  emitted by `gramatr/brand-spec-validator`. README rule list
+  updated to match. Historical v1.5 CHANGELOG entry left as the
+  as-shipped record.
+
 ## [1.7.0] — 2026-05-10
 
 Closes
