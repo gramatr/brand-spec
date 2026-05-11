@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.7.1
+contract_version: 1.7.2
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -219,7 +219,7 @@ conventions:
       name:
         type: string
         required: true
-        notes: "human-readable methodology name (e.g., 'Know Your Customer (KYKC)')"
+        notes: "human-readable methodology name (e.g., 'Know Yourself, Know Your Customer (KYKC)')"
       short_name:
         type: string
         required: false
@@ -1235,7 +1235,7 @@ layers:
       state at each stage of the buying or adoption process.
 
       The layer operationalizes a 20-year-old methodology, **KYKC
-      (Know Your Kingdom + Know Your Customer)**, originated by Brian
+      (Know Yourself, Know Your Customer)**, originated by Brian
       Handrigan at the grāmatr digital marketing agency circa 2005.
       KYKC is the discipline; the **CognitiveJourney** is the
       structured artifact that operationalizes the customer side.
