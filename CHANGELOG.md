@@ -33,7 +33,7 @@ exemption canonically.
 **Fix.** New `conventions.cross_layer_references.exempt_fields:`
 list. Each entry declares (a) the field name, (b) why its values
 do not resolve as cross-layer-reference targets, (c) the convention
-that DOES govern its value-vocabulary. v1.7.5 ships with one entry:
+that DOES govern its value-vocabulary. v1.7.6 ships with one entry:
 
 - `applies_to_refs` — values are channel slugs governed by the v1.3
   `applies_to_baseline_slugs` convention.
@@ -54,7 +54,7 @@ separate validator follow-up.
 No schema changes. No required fields added or renamed. No
 field-name pattern change (which would have been a MINOR / breaking
 change requiring brands to rename `applies_to_refs`). v1.7.0–1.7.4
-brands validate cleanly against v1.7.5 with zero changes.
+brands validate cleanly against v1.7.6 with zero changes.
 
 ## [1.7.5] — 2026-05-11
 
