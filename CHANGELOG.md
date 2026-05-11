@@ -4,6 +4,71 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.5] — 2026-05-11
+
+Patch release. Closes [#45](https://github.com/gramatr/brand-spec/issues/45).
+Schema-declaration correction: the three layer schemas affected by the
+v1.7.0 cross-layer-reference convention now declare alias-aware
+required-field semantics, matching the backward-compat promise the
+spec already documented in prose.
+
+### The gap
+
+v1.7.0 introduced the `*_ref` / `*_refs` cross-layer reference naming
+convention and explicitly preserved backward-compat for three legacy
+field names (`priority_layers`, `applies_to`,
+`source_authority.upstream`). The `conventions:` block documented this
+correctly. But the affected layer schemas under `layers:` still
+declared the legacy field names as `required: true` literally — so a
+brand that adopted the canonical `*_refs` names would hard-fail the
+layer schema's required-field check even though the convention block
+said either form was accepted. Brand-spec-validator v0.3.0 worked
+around the gap per-codebase; this release fixes it at the spec.
+
+### The fix
+
+1. New declarative alias registry under
+   `conventions.cross_layer_references.backward_compat.field_aliases`
+   — three entries mirroring the validator's `FieldAlias` interface
+   (`brand-spec-validator/src/aliases.ts`). Validators MAY load this
+   registry as data.
+2. The three affected schema entries gain three fields:
+   `accepts_aliases: true`, `canonical_name: <v1.7 name>`,
+   `legacy_names: [<legacy name>]`. The inline arrays repeat the
+   registry data so each schema entry is self-contained when read in
+   isolation. Required-field semantics are satisfied when EITHER the
+   canonical name OR any registered legacy name is present.
+
+### Affected schema entries
+
+- `layers.agent_context.files[agent-context.md].frontmatter.priority_layers`
+  — alias-aware, canonical `priority_layers_refs`.
+- `layers.voice.directories[voice/].contents[registers/{slug}.md].frontmatter.applies_to`
+  — alias-aware, canonical `applies_to_refs`.
+- `conventions.frontmatter.fields.source_authority.properties.upstream`
+  — alias-aware, canonical `upstream_ref`.
+
+### No behavior change
+
+- Brands: nothing to do. Both name forms already worked in practice
+  (legacy via the un-updated literal; canonical via the validator
+  workaround). v1.7.0–1.7.4 brands validate cleanly against v1.7.5.
+- Validators: existing v0.3.0 alias-aware code remains correct; the
+  spec now matches the implementation. Future validator ports can
+  read the registry directly off `brand.yaml`.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.7.4 → 1.7.5.
+- `brand.yaml` (`conventions.cross_layer_references.backward_compat`):
+  added `field_aliases:` registry (3 entries).
+- `brand.yaml` (`conventions.frontmatter.fields.source_authority.properties.upstream`):
+  added `accepts_aliases: true`, `canonical_name`, `legacy_names`.
+- `brand.yaml` (`layers.agent_context.files[].frontmatter.priority_layers`):
+  expanded from inline to block form; added alias-aware fields.
+- `brand.yaml` (`layers.voice.directories[].contents[].frontmatter.applies_to`):
+  added alias-aware fields.
+
 ## [1.7.4] — 2026-05-10
 
 Patch release. Templates and `brand.yaml` examples now demonstrate the
