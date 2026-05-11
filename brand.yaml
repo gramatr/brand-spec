@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.12.0
+contract_version: 1.13.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -633,6 +633,21 @@ conventions:
             notes: |
               Used by `conventions.frontmatter.fields.source_authority.properties.upstream`.
               Singular (`*_ref`) — one path or URL.
+          - canonical: target_persona_ref
+            legacy: [target_persona]
+            context: examples.frontmatter
+            added_in: 1.13.0
+            notes: |
+              (v1.13.0) Used by
+              `layers.examples.directories[examples/].contents[{content-type}-{slug}.md].frontmatter`.
+              Singular (`*_ref`) — one path to `personas/{audience}-{role}.md`.
+              The legacy `target_persona:` continues to validate as a
+              free-form string (some brand examples target hypothetical
+              or future personas that have no corresponding file yet —
+              e.g., next90-brand examples targeting vertical-specific
+              personas like `marketing-director-hvac` that the brand's
+              persona matrix does not author). Brands migrate to the
+              `_ref` form when their target is an actual persona file.
 
   # ---------------------------------------------------------------------------
   # Prompt sub-variant fields (v1.12.0)
@@ -2467,6 +2482,14 @@ layers:
       Reference outputs that have been human-validated. Used as few-shot
       anchors by prompt templates and as regression checks when prompts
       or voice change.
+
+      (v1.13.0) Examples that target a specific named company SHOULD
+      declare `target_company:` (free-form string). Examples that
+      target a specific persona MAY declare `target_persona_ref:`
+      (v1.7 cross-layer-ref to `personas/{audience}-{role}.md`); the
+      legacy free-form `target_persona:` continues to validate for
+      hypothetical or future personas with no corresponding file.
+      See `conventions.cross_layer_references.backward_compat.field_aliases`.
     directories:
       - path: examples/
         contents:
@@ -2478,6 +2501,46 @@ layers:
               variant:          { type: string, required: false, notes: "e.g., 'vertical-specific'" }
               target_vertical:  { type: string, required: false }
               target_role:      { type: string, required: false }
+              target_company:
+                type: string
+                required: false
+                added_in: 1.13.0
+                notes: |
+                  (v1.13.0) Free-form string naming the company,
+                  organization, or operator profile this example
+                  targets. Values may be a named real company (e.g.,
+                  `WHOOP`, `Blue Cross Blue Shield Association`) or a
+                  profile description (e.g., `Large independent HVAC
+                  operator (multi-market)`). The spec does not
+                  prescribe a structured shape; brand-defined.
+                  Observed in next90-brand email-sequence examples.
+              target_persona:
+                type: string
+                required: false
+                accepts_aliases: true
+                canonical_name: target_persona_ref
+                legacy_names: [target_persona]
+                notes: |
+                  (v1.13.0) Alias-aware per
+                  `conventions.cross_layer_references.backward_compat.field_aliases`.
+                  The canonical v1.7-conformant name is
+                  `target_persona_ref:` — a singular `*_ref` that
+                  resolves to a file under `personas/{audience}-{role}.md`
+                  via the v1.7 cross-layer-ref convention.
+
+                  The legacy free-form `target_persona:` continues to
+                  validate as a plain string. Brands MAY use either:
+                  the legacy form for hypothetical/future personas
+                  that have no corresponding file (e.g.,
+                  next90-brand's `target_persona: marketing-director-hvac`
+                  describing a vertical-specific persona the
+                  brand's universal audience×role matrix does not
+                  author), or the `_ref` form when the target IS a
+                  real persona file. Validators MUST treat presence
+                  of EITHER name as satisfying the field; the v1.7
+                  `cross-layer-ref-target-resolves` rule applies
+                  only to `target_persona_ref:` (the `_ref` form),
+                  not to the legacy plain string.
               files_used:       { type: array,  required: false, items: { type: string }, notes: "brand files this example was generated from" }
               generated:        { type: string, required: false, format: date }
               status:           { type: string, required: false, notes: "e.g., 'reference — validated by human review'" }

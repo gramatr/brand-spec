@@ -4,6 +4,124 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.13.0] — 2026-05-11
+
+Minor release. Adds two optional frontmatter fields to
+`examples/{content-type}-{slug}.md`: `target_company:` (free-form
+string) and `target_persona_ref:` (v1.7-conformant cross-layer
+ref). Sixth entry of the [v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+("proposal 6") to land.
+
+### The gap
+
+Three next90-brand email-sequence examples
+(`bcbsa-medicare-sequence.md`, `hvac-operator-sequence.md`,
+`whoop-analyst-sequence.md`) already use `target_company:` and
+`target_persona:` in frontmatter. Neither field was declared by
+the spec — they validated only under the spec's permissive
+defaults for undeclared keys.
+
+### The fix
+
+**`target_company:`** (string, optional, free-form). Codifies the
+field as observed. Values may be named real companies (`WHOOP`,
+`Blue Cross Blue Shield Association`) or profile descriptions
+(`Large independent HVAC operator (multi-market)`). The spec does
+not prescribe a structured shape because real-world usage mixes
+both — tightening would force one of the two existing patterns
+into a migration with no upside.
+
+**`target_persona_ref:`** (string, optional). v1.7-conformant
+cross-layer reference resolving to a file under
+`personas/{audience}-{role}.md`. The existing free-form
+`target_persona:` continues to validate via the v1.7.5
+alias-aware mechanism — declared on the layer schema with
+`accepts_aliases: true`, `canonical_name: target_persona_ref`,
+`legacy_names: [target_persona]`.
+
+### Why alias-aware (not a hard migration)
+
+A three-brand audit found that **only 1 of 3 current next90
+`target_persona:` values resolves to an actual persona file**.
+`advertiser-analyst` matches `personas/advertiser-analyst.md`;
+`association-medicare-programs` and `marketing-director-hvac`
+describe vertical-specific personas next90's persona matrix
+does not author (the matrix is universal `audience × role`,
+verticalization happens via the industry-overlay table inside
+each persona file).
+
+If `target_persona_ref:` required strict v1.7 resolution, two
+of three existing files would fail validation today. The
+alias-aware pattern (v1.7.5 precedent for
+`priority_layers_refs`/`applies_to_refs`/`upstream_ref`) lets
+both forms coexist: the canonical `_ref` form resolves; the
+legacy free-form remains a plain string for hypothetical or
+future personas.
+
+### Cross-layer references registry
+
+Adds the 4th alias to
+`conventions.cross_layer_references.backward_compat.field_aliases`:
+
+- canonical: `target_persona_ref`
+- legacy: `[target_persona]`
+- context: `examples.frontmatter`
+
+Mirrors the three v1.7.5 aliases in shape and semantics. The
+`cross-layer-ref-target-resolves` rule applies only to the
+`_ref` form; the legacy plain string is exempt from resolution.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.12.0 → 1.13.0.
+- `brand.yaml` (`conventions.cross_layer_references.backward_compat.field_aliases`):
+  added 4th entry `target_persona_ref ← target_persona` with
+  `context: examples.frontmatter`.
+- `brand.yaml` (`layers.examples.description`): extended to
+  mention the new fields and reference the alias registry.
+- `brand.yaml` (`layers.examples.directories[].contents[].frontmatter`):
+  added `target_company:` (string, optional, free-form);
+  added `target_persona:` alias-aware block with
+  `canonical_name: target_persona_ref` + `legacy_names`.
+
+### Backward compatibility
+
+Purely additive. No renames, no required-field tightening. v1.12.x
+brands validate cleanly against v1.13.0 with zero changes —
+existing free-form `target_persona:` values continue to validate
+as plain strings via the alias-aware mechanism.
+
+### Things explicitly NOT in this release
+
+- **`target_role_ref:` parallel form** — `target_role:` has the
+  same free-form-vs-slug pattern as `target_persona:` (5 values
+  observed, 2 are slugs matching `role_taxonomy:`, 3 are free
+  text like "CMO, VP Growth"). Could parallelize but role
+  taxonomies are brand-internal arrays, not files — resolution
+  semantics are different. Deferred until a brand needs
+  slug-resolution against `role_taxonomy:`.
+- **`example_type` ↔ `content_type` field-name alias** — 2 of
+  10 next90 example files use `content_type:` instead of the
+  spec-required `example_type:`. Separate alias-aware cleanup;
+  conceptually a different semantic question (is the
+  discriminator "what kind of example" or "what kind of
+  content"?). Tracked separately.
+- **Output-spec example shape** — 2 next90 files
+  (`deck-cold-intro.md`, `social-company-page.md`) carry a
+  fundamentally different schema (`content_type` + render
+  fields like `slide_count`, `post_type`, `author`). Whether
+  to model this as a parallel schema, merge it, or migrate it
+  is a bigger architectural question. Deferred to a dedicated
+  RFC item.
+- **Filename pattern drift** — 4 of 8 next90 example filenames
+  don't cleanly match `{content-type}-{slug}.md`. Overlaps with
+  proposal 7 ("onepager" vs "one-pager"); address there.
+- **`files_used:` ↔ `target_persona_ref:` cross-check** —
+  future validator advisory: when `target_persona_ref:` is
+  declared, the referenced persona SHOULD also appear in
+  `files_used:`. Info-severity at most. Deferred to a future
+  validator release.
+
 ## [1.12.0] — 2026-05-11
 
 Minor release. Sanctions two sub-variant discriminator field
