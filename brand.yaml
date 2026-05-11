@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.7.2
+contract_version: 1.7.3
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -356,8 +356,9 @@ conventions:
             exists.
         token:
           notes: |
-            A design-token name (conventionally `--`-prefixed, e.g.,
-            `--brand-primary`). Resolves against `design-tokens.md`
+            A design-token name (conventionally `--`-prefixed and
+            category-first, e.g., `--color-brand-primary`,
+            `--font-heading`, `--space-md`). Resolves against `design-tokens.md`
             or, when present, files under `ui-tokens/`. Long-term
             resolution depends on the body-parse subsystem; until it
             lands, validators SHOULD emit `warn` (not `error`) on
@@ -436,7 +437,7 @@ conventions:
             kind: cites
           primary_color:
             type: token
-            target: --color-brand-blue
+            target: --color-brand-primary
             kind: requires
           related_journey_stages:
             type: layer-entries
@@ -1354,8 +1355,8 @@ layers:
 
       Reference, don't redeclare. Color tokens live in `design-tokens.md`
       and (when present) `ui-tokens/`; this layer assigns DATA ROLES to
-      those token names (e.g., "categorical-1 = `--brand-primary`,
-      categorical-2 = `--brand-secondary`"). The hex value is never
+      those token names (e.g., "categorical-1 = `--color-brand-primary`,
+      categorical-2 = `--color-brand-secondary`"). The hex value is never
       duplicated here. See validation rule
       `data-viz-color-tokens-resolve`.
 
@@ -1433,15 +1434,15 @@ layers:
               Assigns DATA ROLES to design-token names. Example body
               shape (canonical):
 
-                  | Role             | Token reference          |
-                  |------------------|--------------------------|
-                  | categorical-1    | `--brand-primary`        |
-                  | categorical-2    | `--brand-secondary`      |
-                  | sequential-low   | `--surface-subtle`       |
-                  | sequential-high  | `--brand-primary`        |
-                  | diverging-pos    | `--semantic-success`     |
-                  | diverging-neg    | `--semantic-error`       |
-                  | neutral-baseline | `--gray-60`              |
+                  | Role             | Token reference                |
+                  |------------------|--------------------------------|
+                  | categorical-1    | `--color-brand-primary`        |
+                  | categorical-2    | `--color-brand-secondary`      |
+                  | sequential-low   | `--color-surface-subtle`       |
+                  | sequential-high  | `--color-brand-primary`        |
+                  | diverging-pos    | `--color-semantic-success`     |
+                  | diverging-neg    | `--color-semantic-error`       |
+                  | neutral-baseline | `--color-gray-60`              |
 
               The hex value MUST NOT be redeclared here — the token
               reference is the single source of truth. Validators
@@ -2511,7 +2512,7 @@ validation:
       a token defined in `design-tokens.md` or, when present, in a
       file under `ui-tokens/`. The image-generation layer assigns
       USAGE to existing tokens (e.g., "overlay gradient uses
-      `--brand-primary` to `--brand-secondary`"); it MUST NOT
+      `--color-brand-primary` to `--color-brand-secondary`"); it MUST NOT
       redeclare hex values. Mirrors the v1.5
       `data-viz-color-tokens-resolve` rule.
 
