@@ -25,7 +25,9 @@ voice/
 - `voice/README.md` (or `voice/_index.md`) is required when the
   multi-register pattern is used. It lists the registers and documents
   precedence rules for ambiguous contexts.
-- Each register file requires `register:` and `applies_to:` frontmatter.
+- Each register file requires `register:` and `applies_to_refs:`
+  frontmatter (the v1.7.0 cross-layer reference convention form;
+  `applies_to:` is the legacy form and continues to validate).
   All other voice frontmatter (`perspective`, `default_tone`,
   `reading_level`) follows the v1.1 single-register contract.
 

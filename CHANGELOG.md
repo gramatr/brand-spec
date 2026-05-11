@@ -4,6 +4,37 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.4] — 2026-05-10
+
+Patch release. Templates and `brand.yaml` examples now demonstrate the
+v1.7.0 cross-layer reference convention (`*_ref` / `*_refs`) instead
+of the legacy per-layer field names. Closes Phase C of #36 spec-side.
+Brand-side adoption is incremental (per-brand PRs).
+
+Field renames in templates:
+
+- `templates/empty-brand/agent-context.md` — `priority_layers:` →
+  `priority_layers_refs:` (1 rename)
+- `templates/multi-register-voice-example/voice/registers/corporate.md`
+  — `applies_to:` → `applies_to_refs:` (1 rename)
+- `templates/multi-register-voice-example/voice/registers/engineering.md`
+  — `applies_to:` → `applies_to_refs:` (1 rename)
+- `templates/multi-register-voice-example/README.md` — prose updated to
+  reference `applies_to_refs:` as the canonical convention form.
+
+`brand.yaml` `cross_layer_references:` block gains a v1.7.4 note
+recording that the spec's own templates now demonstrate the
+convention end-to-end. Image-generation refs
+(`photography_treatment_ref`, `assets_manifest_ref`,
+`design_tokens_ref`) have been convention-conformant since v1.6.0 —
+no migration needed.
+
+No schema changes. No required fields added or renamed. Legacy field
+names (`priority_layers`, `applies_to`, `upstream`) continue to
+validate cleanly per the v1.7.0 backward-compat block; schema
+property definitions in `brand.yaml` are unchanged. v1.7.0–1.7.3
+brands validate cleanly against v1.7.4 with zero changes.
+
 ## [1.7.3] — 2026-05-10
 
 Patch release. Canonicalizes the design-token name examples in
