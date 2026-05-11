@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.7.6
+contract_version: 1.8.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -196,13 +196,32 @@ conventions:
       - tiktok
       - youtube
     technical:
+      # (v1.8.0) Expanded to formalize the agent/SDK surface observed in
+      # gramatr-brand/voice/registers/engineering.md and implied by
+      # next90-brand's CLI/messaging channels. The pre-v1.8 entries
+      # (code-comments, agent-prompts, technical-docs, github-issues,
+      # error-messages, cli-output, readmes) remain canonical for their
+      # original meanings — brands MAY use either the broad entry or the
+      # finer-grained refinements listed below.
       - code-comments
-      - agent-prompts
+      - agent-prompts             # broad — see also: agent-system-prompts
+      - agent-system-prompts      # (v1.8.0) system-prompt strings shipped to agent runtimes
       - technical-docs
+      - architecture-docs         # (v1.8.0) ADRs, system-design docs distinct from end-user technical-docs
       - github-issues
-      - error-messages
-      - cli-output
-      - readmes
+      - error-messages            # broad — see also: cli-error-messages, api-responses
+      - cli-output                # broad — see also: cli-help-text, cli-error-messages, status-line
+      - cli-help-text             # (v1.8.0) `--help` / man-page output
+      - cli-error-messages        # (v1.8.0) CLI-surfaced errors specifically
+      - status-line               # (v1.8.0) terminal status-line / prompt-segment text
+      - readmes                   # broad — see also: technical-readmes
+      - technical-readmes         # (v1.8.0) READMEs targeting engineers specifically
+      - eng-standards             # (v1.8.0) internal engineering standards / conventions docs
+      - claude-md                 # (v1.8.0) CLAUDE.md / agent-context project files
+      - mcp-tool-descriptions     # (v1.8.0) MCP tool description strings
+      - intelligence-packet-contract # (v1.8.0) agent intelligence-packet schemas / contract docs
+      - api-responses             # (v1.8.0) HTTP/RPC API response strings (errors, messages, codes)
+      - sdk-output                # (v1.8.0) SDK-surfaced strings (exception messages, log output)
     long_form:
       - blog-posts
       - founder-guest-articles

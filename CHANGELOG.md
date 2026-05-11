@@ -4,6 +4,66 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.8.0] — 2026-05-11
+
+Minor release. Expands `conventions.applies_to_baseline_slugs.technical`
+to formalize the agent/SDK surface observed across production brands.
+First entry of the [v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+to land; the remaining proposals in that issue are deferred to later
+v1.8.x / v1.9.x releases.
+
+### The gap
+
+A three-brand audit (next90-brand, gramatr-brand, lean-media-brand)
+found that `gramatr-brand/voice/registers/engineering.md` declares 10
+channel slugs (`claude-md`, `agent-system-prompts`,
+`mcp-tool-descriptions`, `intelligence-packet-contract`,
+`architecture-docs`, `cli-help-text`, `cli-error-messages`,
+`status-line`, `eng-standards`, `technical-readmes`) — none of which
+were in the v1.7.6 technical baseline. They are systematic refinements
+of pre-existing baseline entries:
+
+- `cli-output` → split into `cli-help-text`, `cli-error-messages`,
+  `status-line` for the three distinct surfaces a CLI presents.
+- `readmes` → `technical-readmes` when the audience is engineers
+  specifically.
+- `agent-prompts` → `agent-system-prompts` when the surface is the
+  system-prompt string shipped to an agent runtime (vs. user-facing
+  prompt templates).
+- `error-messages` → `cli-error-messages` / `api-responses`
+  (forthcoming) when the surface is more specific than generic UI
+  errors.
+
+`api-responses` and `sdk-output` were not yet used by any brand but
+are the obvious next baseline entries for any brand shipping an SDK
+or HTTP API; including them now avoids a follow-up baseline bump
+the first time a brand documents either surface.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.7.6 → 1.8.0.
+- `brand.yaml` (`conventions.applies_to_baseline_slugs.technical`):
+  added 12 new baseline slugs — `agent-system-prompts`,
+  `architecture-docs`, `cli-help-text`, `cli-error-messages`,
+  `status-line`, `technical-readmes`, `eng-standards`, `claude-md`,
+  `mcp-tool-descriptions`, `intelligence-packet-contract`,
+  `api-responses`, `sdk-output`. Pre-v1.8 entries are unchanged and
+  remain canonical for their original meanings.
+
+### Backward compatibility
+
+Purely additive. No fields renamed, no fields tightened, no schema
+shape changes. v1.7.x brands validate cleanly against v1.8.0 with
+zero changes. Validators that emit `applies-to-slug-not-in-baseline`
+warnings will stop warning on the 12 new slugs; no validator code
+change is required (the baseline is read from the spec).
+
+### Validator impact
+
+Zero code change required. brand-spec-validator reads the baseline
+list from `brand.yaml` at validation time, so simply bumping its
+contract-version pin to 1.8.0 picks up the new entries automatically.
+
 ## [1.7.6] — 2026-05-11
 
 Patch release. Adds an `exempt_fields:` declaration to
