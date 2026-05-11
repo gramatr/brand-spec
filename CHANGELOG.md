@@ -4,6 +4,182 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.0] — 2026-05-10
+
+Closes
+[`gramatr/brand-spec#31`](https://github.com/gramatr/brand-spec/issues/31)
+— the cross-layer reference syntax RFC. Lifts a pattern that has
+been invented per-layer six times into a single canonical convention
+so future cross-layer reference needs reuse one shape and validators
+can offer one generic resolver instead of N per-layer rules.
+
+Semver justification: **MINOR bump (per `VERSIONING.md`).** Cross-layer
+reference syntax is a new structural primitive that opens use cases
+prior versions could not support — generic reference-graph
+construction by AI agents, one validator resolver across all layers,
+authoritative `kind` (requires / recommends / cites) edges between
+files. `VERSIONING.md` names "a new structural primitive (e.g.,
+schema-level support for cross-brand inheritance)" as canonical
+minor-bump territory; this release matches that bar. No required
+field added; no enum tightened; no existing field renamed or removed.
+v1.6.1 brands (NEXT90, gramatr-brand, lean-media-brand) validate
+cleanly against v1.7.0 with zero modifications — verified by
+inspection: the convention is purely additive and every legacy
+per-layer reference field continues to validate as before.
+
+The release intentionally ships the convention only. The six
+existing invention sites are NOT migrated in this PR; each migration
+lands as a separate v1.7.x patch so reviewers can audit them
+individually and brand authors can opt in at their own pace.
+Validator runtime resolution of the new generic rules is post-merge
+work in `gramatr/brand-spec-validator` (likely v0.2.0 since the
+generic resolver is a meaningful new subsystem).
+
+### Added
+
+- **`conventions.cross_layer_references:` block in `brand.yaml`
+  (RFC #31).** New convention block under the existing
+  `conventions:` section, alongside `methodology_provenance:` and
+  `applies_to_baseline_slugs:`. Sub-fields:
+    - **`field_name_pattern:`** — regex `^[a-z_]+_refs?$`. Documents
+      which frontmatter fields are treated as references. Singular
+      `*_ref` carries one scalar; plural `*_refs` carries an array.
+      Less typing for the common single-value case while keeping
+      array shape symmetrical.
+    - **`reference_value_types:`** — five resolvable target types:
+      `layer` (resolves against `brand.yaml`'s `layers:` block),
+      `file` (path against the brand repo root), `token` (token name;
+      resolution depends on the body-parse subsystem long-term —
+      validator emits `warn` for unresolvable token refs until that
+      subsystem lands), `path_with_fragment` (`path#section-anchor`),
+      and `url` (external; well-formedness only).
+    - **`structured_references_block:`** — optional top-level
+      `references:` frontmatter block schema. Each entry carries
+      `type`, `target`, `kind` (one of `requires` | `recommends` |
+      `cites`), an optional `entries` array (for the
+      `layer-entries` type with sub-selection), and optional
+      `notes` (free-text edge label for downstream reference-graph
+      consumers). Optional throughout — most refs use the naming
+      convention alone; authors opt into the structured block only
+      when the extra metadata is genuinely needed.
+    - **`backward_compat:`** — explicit policy that legacy per-layer
+      reference fields (`source_authority.upstream`,
+      `agent-context.priority_layers`,
+      `voice/registers.applies_to`, etc.) keep working unchanged.
+      Carries the canonical legacy → convention mapping that the
+      `legacy-ref-field-migration-recommended` rule enforces.
+      Hard deprecation deferred to v2.
+
+- **Validation rules (3 new):**
+    - `cross-layer-ref-target-resolves` (error) — when a frontmatter
+      field matches the `^[a-z_]+_refs?$` pattern, the resolved
+      target MUST exist (file exists, layer is declared, URL is
+      well-formed). Token references emit `warn` (not `error`) until
+      the body-parse subsystem lands; the rule then tightens for
+      tokens too. Replaces, in spirit, the per-layer resolver
+      pattern repeated across `agent-context-priority-layers-resolve`,
+      `image-gen-photography-treatment-link-valid`,
+      `image-gen-overlay-manifest-link-valid`, and others — those
+      legacy rules remain in force for backward compatibility but
+      converge with the generic rule for new `*_ref` / `*_refs`
+      fields.
+    - `structured-references-kind-valid` (error) — when the
+      `references:` block is present, every entry MUST declare
+      `type`, `target`, and `kind`. `kind` MUST be one of
+      `requires` | `recommends` | `cites`. `type` MUST be one of
+      `layer` | `file` | `token` | `path_with_fragment` | `url` |
+      `layer-entries`.
+    - `legacy-ref-field-migration-recommended` (info) — when a
+      known legacy reference field (`source_authority.upstream`,
+      `agent-context.priority_layers`,
+      `voice/registers.applies_to`, etc.) is present, the validator
+      SHOULD emit an info-severity advisory pointing at the
+      convention-conformant shape. Brands MAY ignore the advisory
+      indefinitely.
+
+- **`templates/cross-layer-refs-example/`** — small contrived but
+  realistic worked example. A fictional
+  `messaging/channel-deck.md` demonstrates both the naming
+  convention (`data_viz_ref:`, `personas_refs:`) and the structured
+  `references:` block (with `kind: requires` / `kind: cites`
+  entries). A sibling `data-viz/colors.md` is the resolution
+  target. Kept intentionally small — its job is to document the
+  convention shape, not to demonstrate every edge case.
+
+### Changed
+
+- `contract_version` bumped to `1.7.0`.
+- `README.md` updated:
+    - The "For AI agents" section gains a paragraph explaining
+      that agents can grep frontmatter for fields matching
+      `^[a-z_]+_refs?$` (and read the optional `references:`
+      block) to construct a brand reference graph generically,
+      with a pointer to the `conventions.cross_layer_references:`
+      block in `brand.yaml` for the full schema.
+    - New "What's new in v1.7" section above the v1.6.1 entry.
+
+### Backward compatibility
+
+- v1.6.1 brands (NEXT90, gramatr-brand, lean-media-brand) validate
+  cleanly against v1.7.0 with zero modifications — verified by
+  inspection. The cross-layer reference convention is purely
+  additive: the only new error-severity rules
+  (`cross-layer-ref-target-resolves`,
+  `structured-references-kind-valid`) trigger only on fields that
+  match the new naming convention or on the new `references:`
+  block, and no legacy field uses either shape.
+- No required field added to any existing layer.
+- No enum tightened, no existing field renamed or removed.
+- Every legacy per-layer reference field continues to validate as
+  before. The `legacy-ref-field-migration-recommended` rule is
+  info-severity and never blocks; brands MAY ignore the advisory.
+
+### Migration plan (deferred — NOT in this PR)
+
+The 6 existing invention sites stay as-is in v1.7.0. Each migrates
+in a separate v1.7.x patch PR so reviewers can audit them
+independently:
+
+1. v1.7.1 — `agent-context.md` `priority_layers` →
+   `priority_layers_refs`
+2. v1.7.2 — `voice/registers/<slug>.md` `applies_to` →
+   `applies_to_refs`
+3. v1.7.3 — `source_authority.upstream` → `upstream_ref`
+4. v1.7.4 — journey-stage frontmatter pointers (deferred from v1.4)
+   adopt `journey_stage_ref` / `journey_stages_refs`
+5. v1.7.5 — `data-viz/colors.md` color-role token references adopt
+   the `color_role_*_ref` convention
+6. v1.7.6 — `image-generation/style.md` and
+   `image-generation/brand-overlays.md` reference fields confirmed
+   convention-conformant; legacy aliases formally cited in the
+   convention
+
+Each patch is opt-in for brand authors — the legacy field continues
+to validate cleanly, and the migration is a doc/template change in
+the spec plus a recommendation for brand maintainers.
+
+### Out of scope (deferred)
+
+- **Validator code implementation.** v1.7.0 ships the schema and
+  documentation only. The reference validator
+  (`gramatr/brand-spec-validator`) implements the generic resolver
+  and the three new rules in a follow-up release (likely v0.2.0,
+  since the generic resolver is a meaningful new subsystem and not
+  a drop-in addition to the existing rule loop).
+- **Inline body-reference syntax.** `{{ ref:name }}` templating
+  inside markdown body is NOT in v1.7.0. Frontmatter refs only.
+  Defer until a real consumer needs body-level references.
+- **URI-scheme pointers (Option D from RFC #31).** Forms like
+  `brand-spec://layer/path` are deferred to v2. Cross-brand
+  references are the most plausible trigger; today's brand-spec is
+  single-brand-per-repo.
+- **Per-layer rule consolidation.** Existing per-layer reference
+  rules (`agent-context-priority-layers-resolve`,
+  `image-gen-*-link-valid`, etc.) remain in force in v1.7.x for
+  backward compatibility. Consolidation under the generic
+  resolver is v2 territory once all six legacy fields have
+  migrated to the convention shape.
+
 ## [1.6.1] — 2026-05-10
 
 Closes Phase 2 sub-issue

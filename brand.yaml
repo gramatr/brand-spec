@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.6.1
+contract_version: 1.7.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -278,6 +278,225 @@ conventions:
         notes: |
           Free-text additional context — what makes this methodology
           distinct, why it matters now, what consumers should know.
+
+  # (v1.7) Cross-layer reference syntax convention. Closes RFC #31.
+  #
+  # Cross-layer references have been invented per-layer six times
+  # (`agent-context.priority_layers`, `voice/registers.applies_to`,
+  # `source_authority.upstream`, journey-stage refs, `data-viz/colors.md`
+  # token refs, `image-generation/style.md` and `brand-overlays.md` refs).
+  # v1.7 lifts the pattern into a single canonical convention so future
+  # cross-layer reference needs reuse one shape and validators can offer
+  # one generic resolver instead of N per-layer rules.
+  #
+  # Two co-equal mechanisms (Hybrid B + C from RFC #31):
+  #
+  #   1. Frontmatter NAMING CONVENTION — any frontmatter field whose
+  #      name matches the regex below is treated as a reference and
+  #      resolved by the validator. Singular (`*_ref`) for one value;
+  #      plural (`*_refs`) for arrays. Low ceremony, recommended for
+  #      most cases.
+  #
+  #   2. Optional structured `references:` BLOCK — a top-level
+  #      frontmatter block where each entry carries explicit `kind`
+  #      (requires / recommends / cites) and target metadata. Heavier;
+  #      use when the extra metadata is genuinely needed.
+  #
+  # Inline body-reference syntax (e.g., `{{ ref:name }}`) is NOT
+  # included in v1.7. Frontmatter refs only. URI-scheme pointers
+  # (Option D from RFC #31) are deferred to v2.
+  #
+  # Backward compatibility: existing per-layer reference fields
+  # (`source_authority.upstream`, `agent-context.priority_layers`,
+  # `voice/registers.applies_to`, etc.) keep working unchanged.
+  # Validators emit an info-severity migration advisory; no brand is
+  # forced to migrate. Hard deprecation is deferred to v2.
+  cross_layer_references:
+    notes: |
+      Authoritative shape of cross-layer references in brand-spec.
+      Authors pick the naming convention by default and opt into the
+      structured block only when richer metadata is required.
+
+    # 1. Frontmatter naming convention (Option B)
+    field_name_pattern:
+      type: string
+      format: regex
+      value: "^[a-z_]+_refs?$"
+      notes: |
+        Any frontmatter field whose name matches this regex is treated
+        as a cross-layer reference. Singular (`*_ref`) carries a single
+        scalar reference value; plural (`*_refs`) carries an array of
+        reference values. Validators MUST resolve every matching field
+        according to `reference_value_types` below.
+
+        Examples (all valid under the convention):
+          photography_treatment_ref: design/photography-treatment.md
+          assets_manifest_ref: assets/_manifest.md
+          priority_layers_refs: [identity, voice, vocabulary]
+          forbidden_chart_types_refs: [data-viz/chart-types.md#forbidden]
+
+    # 2. Resolvable target types
+    reference_value_types:
+      notes: |
+        A reference value is one of the following resolvable types.
+        The validator infers type from the value's shape unless the
+        structured `references:` block declares it explicitly.
+      types:
+        layer:
+          notes: |
+            A layer name declared in this schema's top-level `layers:`
+            block (e.g., `identity`, `voice`, `journey`). Resolves
+            against `brand.yaml`. Used today by
+            `agent-context.priority_layers`.
+        file:
+          notes: |
+            A path relative to the brand repo root (e.g.,
+            `design/photography-treatment.md`,
+            `assets/_manifest.md`). Validator MUST verify the file
+            exists.
+        token:
+          notes: |
+            A design-token name (conventionally `--`-prefixed, e.g.,
+            `--brand-primary`). Resolves against `design-tokens.md`
+            or, when present, files under `ui-tokens/`. Long-term
+            resolution depends on the body-parse subsystem; until it
+            lands, validators SHOULD emit `warn` (not `error`) on
+            unresolvable token references.
+        path_with_fragment:
+          notes: |
+            A file path with a body-section anchor
+            (`path/to/file.md#section-anchor`). Validator MUST verify
+            the file exists; anchor verification depends on the
+            body-parse subsystem and is `warn`-only until it lands.
+        url:
+          notes: |
+            An external URL. Validator MUST verify well-formedness
+            only; reachability is out of scope.
+
+    # 3. Structured `references:` frontmatter block (Option C)
+    structured_references_block:
+      required: false
+      notes: |
+        Optional top-level frontmatter block. Authors use this when a
+        reference needs richer metadata than the naming convention
+        carries — most importantly `kind` (requires / recommends /
+        cites) and structured layer-entries selection. When the block
+        is absent, the naming convention alone is sufficient.
+
+        Each entry under `references:` is keyed by an author-chosen
+        name (the key is local to the file and does not need to be
+        globally unique). The shape of each entry:
+      entry_fields:
+        type:
+          required: true
+          enum: [layer, file, token, path_with_fragment, url, layer-entries]
+          notes: |
+            One of the resolvable target types above. The additional
+            value `layer-entries` is for selecting a subset of files
+            within a layer (e.g., a specific list of journey stages
+            under `journey/stages/`).
+        target:
+          required: true
+          notes: |
+            The actual reference value. Shape depends on `type` —
+            a layer name for `layer`, a path for `file`, a token name
+            for `token`, a `path#anchor` string for
+            `path_with_fragment`, a URL for `url`, a directory path
+            for `layer-entries`.
+        kind:
+          required: true
+          enum: [requires, recommends, cites]
+          notes: |
+            - `requires`   — the consumer of this file MUST also load
+                             the referenced target to function correctly.
+            - `recommends` — the target enriches the consumer's
+                             behavior but is not strictly required.
+            - `cites`      — the reference is informational
+                             attribution; consumers MAY ignore.
+        entries:
+          required: false
+          notes: |
+            Only meaningful when `type: layer-entries`. An array of
+            slugs naming the specific entries within the target layer
+            being referenced (e.g.,
+            `entries: [problem-recognition, option-evaluation]` when
+            `target: journey/stages/`).
+        notes:
+          required: false
+          notes: |
+            Free-text context explaining why this reference exists.
+            Helpful for downstream agents that build a reference graph
+            and want human-readable edge labels.
+
+      example: |
+        references:
+          photography_treatment:
+            type: file
+            target: design/photography-treatment.md
+            kind: cites
+          primary_color:
+            type: token
+            target: --color-brand-blue
+            kind: requires
+          related_journey_stages:
+            type: layer-entries
+            target: journey/stages/
+            entries: [problem-recognition, option-evaluation]
+            kind: requires
+            notes: |
+              The discovery deck variants depend on these stage
+              definitions for stage-aware messaging.
+
+    # 4. Backward compatibility
+    backward_compat:
+      notes: |
+        Legacy per-layer reference fields keep working unchanged in
+        v1.7. Brand authors are NOT forced to migrate. The following
+        legacy fields continue to validate and resolve via their
+        existing per-layer rules; the validator additionally emits an
+        info-severity migration advisory recommending the
+        convention-conformant shape.
+      legacy_field_mapping:
+        notes: |
+          Canonical legacy → convention mapping. Validator's
+          `legacy-ref-field-migration-recommended` rule lists these.
+        mappings:
+          - legacy: "source_authority.upstream"
+            recommended: "upstream_ref"
+            notes: "single file path or URL — `*_ref` (singular) form"
+          - legacy: "agent-context.priority_layers"
+            recommended: "priority_layers_refs"
+            notes: "array of layer names — `*_refs` (plural) form"
+          - legacy: "voice/registers/<slug>.md applies_to"
+            recommended: "applies_to_refs"
+            notes: |
+              array of channel/context slugs — `*_refs` (plural) form;
+              the underlying baseline-slug taxonomy from v1.3 is
+              unchanged.
+          - legacy: "(future) journey/stages frontmatter pointers"
+            recommended: "journey_stage_ref / journey_stages_refs"
+            notes: |
+              singular for one stage, plural for many; v1.4 deferred
+              the syntax — v1.7 settles it.
+          - legacy: "data-viz/colors.md role-to-token table refs"
+            recommended: "color_role_*_ref"
+            notes: |
+              naming-convention form for per-role token assignments;
+              the body-parse subsystem still owns hex-literal
+              detection.
+          - legacy: |
+              image-generation/style.md photography_treatment_ref,
+              image-generation/brand-overlays.md assets_manifest_ref
+            recommended: "photography_treatment_ref / assets_manifest_ref"
+            notes: |
+              already convention-shaped (both end in `_ref`); the
+              advisory does not fire on these — they are recorded
+              here only for completeness so downstream tooling
+              recognizes the shape as canonical.
+      hard_deprecation: |
+        Hard deprecation of legacy field names is deferred to v2 (a
+        major version). v1.7.x and any subsequent minor releases keep
+        legacy fields validating cleanly.
 
 # -----------------------------------------------------------------------------
 # Layers
@@ -2371,3 +2590,74 @@ validation:
       treating functional UI icons as brand imagery.
       Informational — brands with only one of the two surfaces
       MAY omit the section.
+
+  # ---------------------------------------------------------------------
+  # (v1.7) New validation rules — cross-layer reference convention
+  # ---------------------------------------------------------------------
+
+  - id: cross-layer-ref-target-resolves
+    severity: error
+    rule: |
+      (v1.7) Every frontmatter field whose name matches the regex
+      `^[a-z_]+_refs?$` (defined under
+      `conventions.cross_layer_references.field_name_pattern`) is
+      treated as a cross-layer reference and MUST resolve to an
+      existing target according to its inferred type:
+        - `layer`              — name MUST appear in this schema's
+                                 top-level `layers:` block.
+        - `file`               — path MUST exist relative to the
+                                 brand repo root.
+        - `path_with_fragment` — file portion MUST exist; anchor
+                                 verification is `warn`-only until
+                                 the body-parse subsystem lands.
+        - `url`                — MUST be well-formed; reachability
+                                 is out of scope.
+        - `token`              — token name SHOULD resolve to a
+                                 token defined in `design-tokens.md`
+                                 or `ui-tokens/`. Severity drops to
+                                 `warn` (not `error`) for token
+                                 references until the body-parse
+                                 subsystem lands; once it does, this
+                                 rule tightens for tokens too.
+      Singular `*_ref` carries one scalar value; plural `*_refs`
+      carries an array — each array entry MUST resolve. The rule is
+      generic; it replaces the per-layer resolver pattern that has
+      been re-invented six times.
+
+  - id: structured-references-kind-valid
+    severity: error
+    rule: |
+      (v1.7) When a file declares the optional `references:`
+      frontmatter block (defined under
+      `conventions.cross_layer_references.structured_references_block`),
+      every entry MUST declare `type`, `target`, and `kind`. The
+      `kind` value MUST be one of `requires`, `recommends`, or
+      `cites`. The `type` value MUST be one of `layer`, `file`,
+      `token`, `path_with_fragment`, `url`, or `layer-entries`. The
+      `entries` field is meaningful only when `type: layer-entries`;
+      validators MAY warn when `entries` appears with any other
+      `type`. The `notes` field is free-text and unconstrained.
+
+  - id: legacy-ref-field-migration-recommended
+    severity: info
+    rule: |
+      (v1.7) When a legacy per-layer reference field is present, the
+      validator SHOULD emit an info-severity advisory recommending
+      migration to the `*_ref` / `*_refs` naming convention or to a
+      `references:` block entry. Legacy fields keep validating; the
+      advisory is informational and never blocks. Legacy → recommended
+      mapping (mirrors
+      `conventions.cross_layer_references.backward_compat.legacy_field_mapping`):
+        - `source_authority.upstream`
+            → `upstream_ref` (singular)
+        - `agent-context.md` `priority_layers`
+            → `priority_layers_refs` (plural)
+        - `voice/registers/<slug>.md` `applies_to`
+            → `applies_to_refs` (plural)
+        - future `journey/stages` frontmatter pointers
+            → `journey_stage_ref` (singular) or `journey_stages_refs`
+              (plural)
+        - `data-viz/colors.md` role-to-token table refs
+            → `color_role_*_ref` (singular per role)
+      Brands MAY ignore the advisory indefinitely; hard deprecation is
+      deferred to v2.

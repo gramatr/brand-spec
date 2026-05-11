@@ -18,6 +18,7 @@ If you are an AI agent that needs to operate as a brand:
    - **Next:** `design-tokens.md`, `personas/` — visual system and audience definitions.
    - **Last (for few-shot anchoring):** `examples/`, `prompts/` — validated reference outputs and content-type briefs.
 5. **Respect frontmatter.** Fields like `validated: true` on a prompt mean the listed examples are trustworthy anchors. Fields like `status: open` on a design spec mean the answer is not yet settled.
+6. **Build a reference graph generically (v1.7+).** Any frontmatter field whose name matches the regex `^[a-z_]+_refs?$` is a cross-layer reference (singular `*_ref` for a single value, plural `*_refs` for arrays). Resolve each value as a layer name, file path, design-token name, `path#fragment`, or URL. When a file declares an optional top-level `references:` block, each entry additionally carries `kind` (`requires` | `recommends` | `cites`) so you can weight edges in the graph. Together they let an agent walk a brand without knowing per-layer naming. See `conventions.cross_layer_references:` in `brand.yaml` for the full schema.
 
 The repo is the LLM context. No API call required.
 
@@ -54,6 +55,62 @@ Body (target ≈ 2-4K tokens):
 - Anything else essential — proprietary concepts, what the brand is NOT, hard tone rules
 
 Think of it as the brand's `CLAUDE.md`: the file you load when you can only load one file.
+
+## What's new in v1.7
+
+A canonical **cross-layer reference syntax** lands as a new
+structural primitive. Cross-layer references had been invented
+per-layer six times (`agent-context.priority_layers`,
+`voice/registers.applies_to`, `source_authority.upstream`,
+journey-stage refs, `data-viz/colors.md` token refs,
+`image-generation/style.md` and `brand-overlays.md` refs); v1.7
+lifts the pattern into one convention so future cross-layer needs
+reuse one shape and validators can ship one generic resolver
+instead of N per-layer rules. Closes RFC
+[`#31`](https://github.com/gramatr/brand-spec/issues/31).
+
+Two co-equal mechanisms (Hybrid B + C from the RFC):
+
+- **Frontmatter naming convention.** Any field whose name matches
+  the regex `^[a-z_]+_refs?$` is treated as a reference. Singular
+  (`*_ref`) for one value; plural (`*_refs`) for arrays.
+  Low-ceremony — recommended for most cases.
+- **Optional `references:` block.** When a reference needs richer
+  metadata (`kind: requires` / `recommends` / `cites`, structured
+  layer-entries selection, free-text edge notes), authors opt into
+  the structured frontmatter block. Optional — most refs use the
+  naming convention alone.
+
+Five resolvable target types: `layer`, `file`, `token`,
+`path_with_fragment`, `url`. Inline body-reference syntax
+(`{{ ref:name }}`) and URI-scheme pointers (Option D from the
+RFC) are intentionally NOT in v1.7 — frontmatter refs only;
+URI-scheme is v2 territory.
+
+Three new validation rules:
+
+- `cross-layer-ref-target-resolves` (error) — `*_ref` / `*_refs`
+  fields MUST resolve. Token references emit `warn` (not `error`)
+  until the body-parse subsystem lands.
+- `structured-references-kind-valid` (error) — `references:` block
+  entries MUST declare valid `type`, `target`, and
+  `kind` (`requires` | `recommends` | `cites`).
+- `legacy-ref-field-migration-recommended` (info) — when a known
+  legacy reference field is present, the validator advises
+  migration to the convention. Brands MAY ignore the advisory
+  indefinitely; legacy fields keep validating.
+
+Semver: **MINOR bump** per `VERSIONING.md`. A new structural
+primitive is the canonical minor-bump example. v1.6.1 brands
+(NEXT90, gramatr-brand, lean-media-brand) validate cleanly against
+v1.7.0 with zero changes — verified by inspection. The 6 existing
+invention sites stay as-is in v1.7.0; each migrates in a separate
+v1.7.x patch so reviewers can audit independently. Validator
+runtime resolution of the new generic rules is post-merge work in
+`gramatr/brand-spec-validator`.
+
+See [`templates/cross-layer-refs-example/`](./templates/cross-layer-refs-example/)
+for the worked example.
 
 ## What's new in v1.6.1
 
