@@ -4,6 +4,92 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.11.0] — 2026-05-11
+
+Minor release. Declares a new optional file slot:
+`design/visual-system.md` — a prose manifesto of the brand's
+visual language. Fourth entry of the
+[v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+("proposal 4") to land.
+
+### The gap
+
+A brand's overall visual language — what its imagery looks like,
+what surfaces it appears on, what generative-image prompts produce
+on-brand output, what falls explicitly off-brand — is distinct
+from both `design-tokens.md` (machine-readable tokens) and
+`design/photography-treatment.md` (narrow photo direction). The
+holistic prose layer that ties tokens, typography, photography,
+and surface templates into a single readable document had no spec
+home. next90-brand has one in production
+(`assets/visual-system.md`) with no schema declaration.
+
+### The fix
+
+New optional file under the design layer:
+
+- **`design/visual-system.md`** (recommended-not-required) —
+  singular, one per brand. Mirrors the cardinality of
+  `design-tokens.md` and `design/iconography.md`. Frontmatter
+  schema: `type: visual-system` (const, required), plus optional
+  `version`, `status`, `last_updated`, and `source`. Body sections
+  recommended: visual language principles, surface system (e.g.,
+  OG images), generative prompts, channel templates, what-not-to-do.
+
+### Design notes
+
+**The `source:` field** captures derivation provenance — where
+the visual-system spec was derived from (live website observation,
+design system retrospective, studio review). When the spec needs
+to be re-derived as the brand's visual language evolves, the
+source field tells the next author where to look. Brand-defined
+free-form string; not validator-enforced. Observed in practice on
+next90-brand's existing file.
+
+**Canonical path is `design/visual-system.md`**, matching the spec
+prose at the design layer's preamble ("home for design specs that
+don't fit cleanly in design-tokens.md"). Brands MAY place under
+`assets/visual-system.md` for organizational reasons; validators
+MAY emit an info-severity drift advisory but never error.
+
+**Singular, one per brand.** Not patterned like
+`messaging/channel-{channel}.md`. The visual language is one
+coherent thing; sub-system specs (photography treatment,
+iconography) live in their own sibling files and the
+visual-system file references them.
+
+### What is NOT in this release
+
+**Photography-treatment formalization is deferred.** The spec has
+referenced `design/photography-treatment.md` since v1.6.0 (in
+cross-layer-ref examples) but never declared its frontmatter
+schema. lean-media-brand uses it in production with
+`type: design-spec` + `area: imagery` — which conflicts with the
+v1.6.1 iconography precedent of specific `type:` constants per
+file. Resolving the conflict needs more design thought (alias the
+legacy type? generalize iconography retroactively? declare a new
+canonical type?) and belongs in a separate RFC item. Today it
+continues to validate under the spec's permissive default for
+undeclared frontmatter paths.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.10.0 → 1.11.0.
+- `brand.yaml` (`layers.design.description`): prose extended to
+  mention `visual-system.md` and contrast it with sibling files.
+- `brand.yaml` (`layers.design.additional_files`): added
+  `design/visual-system.md` declaration with full frontmatter
+  schema and body-section recommendations.
+
+### Backward compatibility
+
+Purely additive. No fields renamed, no required-field tightening.
+v1.10.x brands validate cleanly against v1.11.0 with zero changes.
+Brands without a visual-system file continue to validate;
+next90-brand's existing `assets/visual-system.md` continues to
+validate under the spec's permissive default and MAY migrate to
+`design/visual-system.md` at the brand's pace.
+
 ## [1.10.0] — 2026-05-11
 
 Minor release. Formalizes the persona matrix axes — adds optional

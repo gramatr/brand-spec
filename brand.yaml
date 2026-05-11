@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.10.0
+contract_version: 1.11.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -986,7 +986,8 @@ layers:
       Visual system: colors, typography, modes, logo references. Also
       the home for design specs that don't fit cleanly in
       `design-tokens.md` (channel-specific specs, photography
-      treatment, and — as of v1.6.1 — iconography conventions).
+      treatment, iconography conventions, and — as of v1.11.0 — the
+      brand's overall visual-language manifesto in `visual-system.md`).
 
       (v1.6.1) Optional `design/iconography.md` extends this layer
       with iconography conventions: which icon set the brand uses,
@@ -996,6 +997,20 @@ layers:
       alongside a `_manifest.md` describing each. The iconography
       file is recommended-not-required; brands without a UI surface
       or without icon discipline MAY skip it cleanly.
+
+      (v1.11.0) Optional `design/visual-system.md` is a prose
+      manifesto of the brand's visual language — what its imagery
+      looks like, what surfaces it appears on (OG images, social
+      templates, email headers), what generative-image prompts
+      produce on-brand output, and what falls explicitly off-brand.
+      Distinct from `design-tokens.md` (machine-readable tokens) and
+      `design/photography-treatment.md` (photo direction): the
+      visual-system file is the holistic prose layer that ties the
+      tokens and the photography conventions into a single readable
+      document. Recommended-not-required; brands without a strong
+      visual identity or whose visual decisions are fully captured
+      by tokens alone MAY skip it cleanly. See `design/visual-system.md`
+      declaration in `additional_files` below.
 
       Decorative-vs-functional distinction. Decorative or gradient
       "icons" that read as brand imagery (e.g., section-decoration
@@ -1226,6 +1241,76 @@ layers:
           tokens are likewise referenced. See validation rules
           `iconography-sizing-references-resolve` and
           `iconography-set-resolves`.
+
+      - path: design/visual-system.md
+        required: false
+        recommended: true
+        added_in: 1.11.0
+        frontmatter:
+          type:         { type: string,  required: true,  const: visual-system }
+          version:      { type: string,  required: false }
+          status:       { type: string,  required: false }
+          last_updated: { type: string,  required: false, format: date, notes: "YYYY-MM-DD" }
+          source:
+            type: string
+            required: false
+            notes: |
+              (v1.11.0) Where this visual-system spec was derived
+              from (e.g., "observed from live website OG images
+              2026-05-05", "design system v2 retrospective",
+              "studio review 2026-03"). When the spec needs to be
+              re-derived as the brand's visual language evolves,
+              the source field tells the next author where to look.
+              Brand-defined free-form string; not validator-enforced.
+        body_sections_recommended:
+          - "The visual language (core principles)"
+          - "Surface system (e.g., OG images, social cards, slide covers)"
+          - "Generative image prompts (when AI image generation is used)"
+          - "Channel templates (social, email, etc.)"
+          - "What not to do"
+        notes: |
+          (v1.11.0) Prose manifesto of the brand's visual language.
+          Singular — one file per brand, like `design-tokens.md` and
+          `design/iconography.md`. Recommended path is
+          `design/visual-system.md`; brands MAY place under
+          `assets/visual-system.md` for organizational reasons but
+          `design/` is canonical per the design layer's framing
+          ("home for design specs that don't fit cleanly in
+          design-tokens.md"). Validators MAY emit an info-severity
+          drift advisory when the file is found at the non-canonical
+          `assets/` path; no error.
+
+          Distinct from sibling files:
+
+          - `design-tokens.md` (required) — machine-readable token
+            tables. The visual-system file references tokens; never
+            redeclares hex values or font names. See
+            `data-viz-color-tokens-resolve` for the parallel rule
+            on data-viz.
+
+          - `design/photography-treatment.md` (recommended; not yet
+            schema-declared as of v1.11.0) — narrow scope: photo
+            direction and treatment. The visual-system file is
+            broader: ties photography, typography, surfaces, and
+            channel-specific templates together. A brand MAY have
+            both; the visual-system file SHOULD reference
+            photography-treatment.md via `photography_treatment_ref:`
+            (already declared on `image-generation/style.md` and
+            documented as a baseline cross-layer-ref in v1.6.0).
+
+          - `design/iconography.md` (recommended) — narrow scope:
+            icon system. Iconography is functional UI chrome; the
+            visual-system file is the holistic visual language that
+            sits above it.
+
+          The `source:` frontmatter field captures derivation
+          provenance: when a brand's visual system is extracted from
+          a live website, a retrospective, or a studio review, the
+          source field records that origin so the next maintainer
+          knows what to re-observe when re-deriving. Observed in
+          next90-brand's existing visual-system.md
+          (currently at `assets/visual-system.md`).
+
     additional_directories:
       - path: design/icons/
         required: false
