@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.14.0
+contract_version: 1.15.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -227,6 +227,62 @@ conventions:
       - founder-guest-articles
       - podcast-intro-outro
       - webinar-scripts
+
+  # (v1.15.0) Baseline kebab-case register slugs observed across
+  # production brands. Used on `voice/registers/{register-slug}.md`
+  # frontmatter's `register:` field (and matched in the filename).
+  #
+  # Direct parallel to `applies_to_baseline_slugs` above: both are
+  # positive enumerations with warn-on-non-baseline semantics. Unlike
+  # `applies_to_baseline_slugs` (a single axis — channel-type),
+  # registers cluster on three axes simultaneously
+  # (audience_area / byline / channel) because a register is a voice
+  # mode that can be discriminated by any of: WHO the voice addresses
+  # (audience_area), WHO is speaking (byline), or WHERE the voice
+  # appears (channel). The categorization captures this; brands
+  # picking a register slug consult the matching category.
+  #
+  # Scope. v1.15.0 ships with the 4 observed slugs across two brands
+  # (gramatr-brand, lean-media-brand). next90-brand uses single-register
+  # `voice.md` (no `voice/registers/` directory); the baseline is moot
+  # for single-register brands.
+  register_baseline_slugs:
+    notes: |
+      Baseline kebab-case register slugs observed across production
+      brands. Use the baseline form when one exists; declare
+      brand-specific slugs only when the register is genuinely
+      brand-specific (a named individual's byline beyond the
+      founder, a channel-specific register the baseline doesn't
+      cover, an audience-area the baseline doesn't name).
+
+      The baseline does NOT mandate that every brand author every
+      register — a brand publishes whichever registers it needs.
+      Many brands ship single-register (`voice.md` at the brand
+      root, no `voice/registers/` directory); for them this
+      baseline is informational only.
+
+      Validators MAY emit an info-severity advisory when a
+      `register:` field value isn't a baseline slug
+      (`register-slug-baseline` rule, deferred to a future
+      validator release per the spec's established pattern).
+      Brand-specific registers continue to validate cleanly; the
+      advisory just surfaces the deviation so the inconsistency
+      is visible (e.g., a fourth brand introducing `corporate`
+      for what gramatr-brand and lean-media-brand call
+      `marketing` would surface as an advisory).
+    audience_area:
+      # Registers discriminated by WHO the voice addresses.
+      - marketing       # speaking to prospects/buyers — buyer-facing surfaces (website, decks, emails)
+      - engineering     # speaking to engineers/agents/technical operators (CLAUDE.md, SDK output, CLI)
+    byline:
+      # Registers discriminated by WHO is speaking — named-individual
+      # voices distinct from the brand-collective voice.
+      - founder-byline  # the founder's personal voice — first-person; named bylines
+    channel:
+      # Registers discriminated by WHERE the voice appears — when
+      # the platform's conventions reshape the brand voice enough
+      # that a dedicated register makes sense.
+      - social          # social-platform output (LinkedIn company page, public threads)
 
   # (v1.14.0) Known drift forms for messaging channel slugs — paired with
   # their canonical kebab-cased hyphenated singular forms. Distinct from
@@ -977,7 +1033,19 @@ layers:
               frontmatter — v1.3 formalizes them. See
               `corpus-metadata-recommended` validation rule.
             frontmatter:
-              register:    { type: string, required: true, notes: "register slug; matches filename" }
+              register:
+                type: string
+                required: true
+                notes: |
+                  Register slug; matches filename. (v1.15.0) Baseline
+                  register slugs are enumerated in
+                  `conventions.register_baseline_slugs` (categorized by
+                  audience_area / byline / channel). Brands SHOULD use
+                  a baseline slug when one fits; brand-specific
+                  registers continue to validate cleanly. Validators
+                  MAY emit info-severity advisory via the deferred
+                  `register-slug-baseline` rule when the value isn't
+                  in the baseline.
               applies_to:
                 type: array
                 required: true

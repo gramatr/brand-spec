@@ -4,6 +4,131 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.15.0] — 2026-05-11
+
+Minor release. New top-level convention block
+`conventions.register_baseline_slugs:` enumerating baseline
+kebab-case register slugs observed across production brands.
+Eighth (final) entry of the [v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+("proposal 8") to land. With this release, all 8 RFC proposals
+are shipped.
+
+### The gap
+
+Voice register slugs (`voice/registers/{register-slug}.md`
+frontmatter's `register:` field) had no canonical baseline. Two
+production brands use multi-register voice patterns:
+
+- gramatr-brand: `marketing`, `engineering`, `founder-byline`
+- lean-media-brand: `marketing`, `social`
+
+`marketing` recurs across both brands; `engineering`,
+`founder-byline`, and `social` appear once each. Without a
+baseline declaration, a fourth brand could invent `corporate` for
+what the existing two call `marketing` and the drift would go
+unsurfaced.
+
+### The fix
+
+New top-level convention block:
+**`register_baseline_slugs:`** — positive enumeration of baseline
+register slugs, categorized into three axes that reflect the
+three different things a register can discriminate:
+
+```yaml
+audience_area:
+  - marketing       # speaking to prospects/buyers
+  - engineering     # speaking to engineers/agents/technical operators
+byline:
+  - founder-byline  # the founder's personal voice; named-individual register
+channel:
+  - social          # social-platform output (LinkedIn company page, etc.)
+```
+
+Plus a brief addition to the `voice/registers/{register-slug}.md`
+frontmatter `register:` field notes referencing the registry.
+
+### Why three categories (not flat)
+
+Unlike `applies_to_baseline_slugs` (single axis — channel-type),
+registers cluster on three axes simultaneously. A register can
+be discriminated by:
+
+- **WHO the voice addresses** (audience_area: marketing addresses
+  prospects, engineering addresses engineers/agents)
+- **WHO is speaking** (byline: founder-byline is the founder's
+  first-person voice, distinct from the brand-collective voice)
+- **WHERE the voice appears** (channel: social is a
+  social-platform register because the platform's conventions
+  reshape the brand voice enough that a dedicated mode helps)
+
+The categorization captures this hybrid taxonomy. Brands picking
+a register slug consult the matching category.
+
+### Validator behavior
+
+`register-slug-baseline` (info/warn) — emits info-severity
+advisory when a `register:` field value isn't in any baseline
+category. Brand-specific registers continue to validate cleanly;
+the advisory just surfaces the deviation so inconsistencies are
+visible early. Deferred to a future validator release per the
+spec's established pattern.
+
+### Single-register brands are unaffected
+
+next90-brand uses single-register `voice.md` at the brand root
+(no `voice/registers/` directory). The baseline is moot for
+single-register brands; the spec already supports both modes per
+`brand.yaml:2723`.
+
+### Why not also enumerate `default_tone:` baseline?
+
+Across the 5 production register files, four distinct
+`default_tone:` values appear: `imperative-precise`,
+`reflective-direct`, `confident-direct`,
+`conversational-observational`. All follow `<adjective>-<adjective>`
+kebab form but no canonical baseline exists. A parallel
+`default_tone_baseline:` would be the obvious next step. Deferred
+to its own RFC item — not bundled with this release.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.14.0 → 1.15.0.
+- `brand.yaml` (new `conventions.register_baseline_slugs:`):
+  enumerated 4 baseline slugs across 3 categories
+  (audience_area / byline / channel).
+- `brand.yaml` (`layers.voice.directories[].contents[registers/{register-slug}.md].frontmatter.register`):
+  expanded from inline to block form; added v1.15.0 note
+  referencing the baseline registry.
+
+### Backward compatibility
+
+Purely additive. No fields renamed, no required-field tightening.
+v1.14.x brands validate cleanly against v1.15.0 with zero changes.
+Current brand register slugs all match the baseline; no brand
+migrations needed.
+
+### v1.8 RFC complete
+
+This release closes the [v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50).
+All 8 proposals shipped across versions v1.8.0 through v1.15.0:
+
+- v1.8.0 (#51) — proposal 1: technical-slug baseline expansion
+- v1.9.0 (#52) — proposal 2: `data_viz_refs:` / `design_tokens_ref:` layer-schema declarations
+- v1.10.0 (#53) — proposal 3: `audience_taxonomy:` / `role_taxonomy:` on personas
+- v1.11.0 (#54) — proposal 4: `design/visual-system.md` slot
+- v1.12.0 (#55) — proposal 5: prompt sub-variant fields
+- v1.13.0 (#56) — proposal 6: `target_company:` / `target_persona_ref:` on examples
+- v1.14.0 (#57) — proposal 7: `channel_slug_canonicalizations:` registry
+- v1.15.0 (this) — proposal 8: `register_baseline_slugs:` convention
+
+Deferred follow-up items tracked separately on issue #50:
+photography-treatment formalization, `example_type` ↔
+`content_type` alias, output-spec example shape, `target_role_ref:`
+parallel, `files_used:` ↔ `target_persona_ref:` cross-check,
+full `messaging_channel_baseline_slugs:` positive baseline,
+`default_tone_baseline:` convention.
+
 ## [1.14.0] — 2026-05-11
 
 Minor release. New top-level convention block
