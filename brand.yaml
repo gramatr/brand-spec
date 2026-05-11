@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.9.0
+contract_version: 1.10.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -1396,7 +1396,66 @@ layers:
             frontmatter:
               type:    { type: string, required: true, const: framework }
               version: { type: string, required: false }
-            notes: "Documents the persona matrix and the role archetype definitions."
+              audience_taxonomy:
+                type: array
+                required: false
+                items: { type: string }
+                notes: |
+                  (v1.10.0) Ordered list of audience slugs this brand's
+                  persona matrix uses. Each slug SHOULD have a
+                  corresponding `messaging/for-{audience}.md` file —
+                  validators MAY emit an info-severity advisory when
+                  an entry does not. Validators MAY also verify that
+                  every individual persona file's
+                  `frontmatter.audience` is a member of this list
+                  (membership check, not coverage check — asymmetric
+                  matrices where some `(audience, role)` cells
+                  intentionally do not exist are valid).
+
+                  Brands MAY use either singular (`advertiser`) or
+                  plural (`advertisers`) slug forms; the spec does not
+                  prescribe. Brands SHOULD pick one convention and
+                  stay consistent within their own files. Observed
+                  in practice: next90-brand uses singular,
+                  gramatr-brand and lean-media-brand use plural.
+              role_taxonomy:
+                type: array
+                required: false
+                items: { type: string }
+                notes: |
+                  (v1.10.0) Ordered list of role slugs this brand's
+                  persona matrix uses. Validators MAY verify that
+                  every persona file's `frontmatter.role` is a member
+                  of this list (membership check, not coverage —
+                  declared roles MAY be absent from any file, e.g.
+                  when a brand has named a role as a candidate but
+                  not yet authored its persona file).
+
+                  Role slugs are brand-defined. Examples observed in
+                  practice: `business-leader`, `analyst`, `operator`
+                  (next90); `practitioner`, `lead`, `buyer`,
+                  `champion` (gramatr, draft); `marketing-director`,
+                  `media-planner`, `performance-marketer`, `director`
+                  (lean-media).
+            notes: |
+              Documents the persona matrix and the role archetype
+              definitions.
+
+              (v1.10.0) The optional `audience_taxonomy:` and
+              `role_taxonomy:` arrays declare the brand's matrix axes
+              in machine-readable form. Before v1.10 the matrix was
+              documented only in prose; the new fields let validators
+              cross-check `audience:`/`role:` slugs on individual
+              persona files and let downstream tooling (persona
+              generators, audience-routing UIs) read the taxonomy
+              from a single source of truth.
+
+              Asymmetric matrices are explicitly valid. Real brands
+              have non-uniform shapes (e.g., lean-media-brand
+              declares 2×4 axes but only 4 of 8 cells are filled
+              because the agency-side column intentionally has one
+              role). The taxonomy fields are membership domains, not
+              coverage guarantees.
           - pattern: "{audience}-{role}.md"
             required: false
             recommended: true

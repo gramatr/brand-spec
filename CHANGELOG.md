@@ -4,6 +4,86 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.10.0] — 2026-05-11
+
+Minor release. Formalizes the persona matrix axes — adds optional
+`audience_taxonomy:` and `role_taxonomy:` array fields to
+`personas/_framework.md` frontmatter. Third entry of the
+[v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+("proposal 3") to land.
+
+### The gap
+
+Before v1.10, `personas/_framework.md` declared only `type:` and
+`version:` in frontmatter. The matrix axes (audience segments and
+role archetypes) were documented in prose, with no machine-readable
+declaration. A three-brand audit found three different role
+taxonomies in production:
+
+- next90-brand: `{business-leader, analyst, operator}`
+- gramatr-brand: `{practitioner, lead, buyer, champion}` (status:
+  draft; role axis explicitly open)
+- lean-media-brand: `{marketing-director, media-planner,
+  performance-marketer, director}` (asymmetric 2×4 matrix; 4 of 8
+  cells intentionally not filled)
+
+The audience axis showed the same pattern. Validators had no way
+to cross-check persona files' `audience:` / `role:` slugs against
+the brand's declared taxonomy; downstream tooling could not read
+the matrix without parsing prose.
+
+### The fix
+
+Two new optional array fields on `personas/_framework.md`
+frontmatter:
+
+- `audience_taxonomy:` — ordered list of audience slugs the brand's
+  matrix uses. Each slug SHOULD correspond to a
+  `messaging/for-{audience}.md` file.
+- `role_taxonomy:` — ordered list of role slugs the brand's matrix
+  uses.
+
+Both fields are optional and additive. Brands that prefer to keep
+the matrix in prose only continue to validate. Brands that adopt
+the new fields enable validators to perform membership checks
+against `audience:` / `role:` values on individual persona files.
+
+### Design notes
+
+**Membership semantics, not coverage.** The taxonomy fields are
+domains of valid slugs, not assertions that every
+`(audience, role)` cell exists. Asymmetric matrices (lean-media's
+2×4 with 4 filled cells, gramatr's draft state where `champion` is
+declared as a candidate but no file uses it) are explicitly valid.
+
+**Slug form is brand-defined.** The spec does not prescribe
+singular (`advertiser`) vs plural (`advertisers`) — brands SHOULD
+pick a convention and stay consistent. Observed in practice:
+next90 singular, gramatr/lean-media plural.
+
+**Validator behavior is deferred.** v1.10.0 declares the fields;
+specific validation rules (`persona-role-in-taxonomy`,
+`persona-audience-in-taxonomy`, info-severity advisories for
+audience-taxonomy entries without matching messaging files) are
+left to a follow-up validator release.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.9.0 → 1.10.0.
+- `brand.yaml` (`layers.personas.directories[].contents[_framework.md].frontmatter`):
+  added `audience_taxonomy:` (array, optional) and
+  `role_taxonomy:` (array, optional).
+- `brand.yaml` (same path, `notes:`): expanded from one-line to
+  documenting the v1.10.0 fields and the membership-vs-coverage
+  semantics.
+
+### Backward compatibility
+
+Purely additive. No fields renamed, no required-field tightening.
+v1.9.x brands validate cleanly against v1.10.0 with zero changes.
+Validators with no taxonomy-membership rule continue to behave
+identically.
+
 ## [1.9.0] — 2026-05-11
 
 Minor release. Formalizes two cross-layer-reference fields that
