@@ -1,0 +1,75 @@
+name: validate
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install PyYAML
+        run: pip install pyyaml
+
+      - name: 1. YAML parse check on brand.yaml
+        run: python3 -c "import yaml; yaml.safe_load(open('brand.yaml')); print('brand.yaml parses OK')"
+
+      - name: 2. contract_version matches CHANGELOG
+        run: |
+          set -euo pipefail
+          CV=$(python3 -c "import yaml; print(yaml.safe_load(open('brand.yaml'))['contract_version'])")
+          CL=$(grep -oE '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1 | sed -E 's/^## \[([^]]+)\].*/\1/')
+          echo "brand.yaml contract_version: $CV"
+          echo "CHANGELOG latest version:    $CL"
+          if [ "$CV" != "$CL" ]; then
+            echo "::error::contract_version ($CV) does not match latest CHANGELOG entry ($CL)"
+            exit 1
+          fi
+
+      - name: 3. Layer documentation drift (brand.yaml layers in README)
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          import re, sys, yaml
+          layers = list(yaml.safe_load(open('brand.yaml')).get('layers', {}).keys())
+          readme = open('README.md').read()
+          missing = []
+          for L in layers:
+              # Tolerate hyphen/underscore variants and word boundaries.
+              variants = {L, L.replace('_', '-'), L.replace('_', ' ')}
+              if not any(re.search(r'\b' + re.escape(v) + r'\b', readme, re.IGNORECASE) for v in variants):
+                  missing.append(L)
+          if missing:
+              print('::error::Layers in brand.yaml not referenced in README:', ', '.join(missing))
+              sys.exit(1)
+          print(f'All {len(layers)} layers referenced in README.')
+          PY
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: 4. Validator parses the spec (install + version check)
+        run: |
+          set -euo pipefail
+          # Simplified per PR scope: install validator at pinned tag and confirm
+          # CLI runs (proves package installs and loads the spec resolver).
+          # Full validateBrand() requires a brand fixture; out of scope for v1.
+          npm install --no-save "github:gramatr/brand-spec-validator#v0.1.5"
+          npx brand-spec-validate --version || npx brand-spec-validate --help
+
+      - name: 5. Tag-on-merge reminder
+        if: github.event_name == 'pull_request'
+        run: |
+          if git log --format=%s "origin/${{ github.base_ref }}..HEAD" | grep -qiE '(bump|version|contract_version|release)'; then
+            echo "::notice::Version-bumping commit detected — remember to tag at merge SHA after merge."
+          fi
