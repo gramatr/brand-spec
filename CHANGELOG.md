@@ -4,6 +4,118 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.14.0] — 2026-05-11
+
+Minor release. New top-level convention block
+`conventions.channel_slug_canonicalizations:` listing known drift
+forms for messaging channel slugs, paired with their canonical
+kebab-cased hyphenated singular replacements. Seventh entry of the
+[v1.8 RFC](https://github.com/gramatr/brand-spec/issues/50)
+("proposal 7") to land.
+
+### The gap
+
+A three-brand audit found one concrete slug-form drift:
+**`one-pager` vs `onepager`**.
+
+- `next90-brand/messaging/channel-onepager.md:2` has
+  `channel: one-pager` (canonical) — but the filename uses
+  `onepager` (drift). Value and filename disagree.
+- `lean-media-brand/messaging/channel-onepager.md:2` has
+  `channel: onepager` (drift) — and the filename matches.
+- 3 next90-brand example filenames also use the drift form
+  (`onepager-medicare-aep.md`, `onepager-hvac-homeservices.md`,
+  `onepager-dtc-subscription.md`).
+
+Total drift: 1 frontmatter value + 5 filenames across two brands.
+
+The spec's prose at `brand.yaml:1545, 2500, 2556` already uses
+`one-pager` (hyphenated singular) as the canonical example form,
+and the singular reading of the existing plural baseline slug
+`one-pagers` (in `applies_to_baseline_slugs.sales`) directionally
+agrees. But the spec had no machine-readable place to declare
+this — validators couldn't surface the drift.
+
+### The fix
+
+New top-level convention block under `conventions:`:
+**`channel_slug_canonicalizations:`** — a list of pairs
+mapping known drift forms to their canonical replacements.
+v1.14.0 ships with one entry:
+
+- `drift: onepager` → `canonical: one-pager`
+
+Plus a brief addition to the messaging-channel pattern notes
+explaining that the file's basename SHOULD encode the canonical
+form and `frontmatter.channel:` SHOULD use it too, and referencing
+the new registry.
+
+### Scope: narrow on purpose
+
+This release does NOT introduce a full positive baseline of
+canonical channel slugs (parallel to
+`applies_to_baseline_slugs:`). A full baseline would require
+enumerating canonical singular forms for ~12-15 channels across
+the brands and resolving questions like `cli` vs `cli-output` —
+its own RFC. The narrow drift registry resolves the one concrete
+inconsistency today and leaves the larger baseline question to
+a separate item on issue #50.
+
+### Two associated validator rules (deferred)
+
+Both deferred to a future validator release per the spec's
+established pattern (declare in spec; validators implement
+later):
+
+- `messaging-channel-slug-canonical` (info/warn) — emits
+  advisory when `frontmatter.channel:` matches a drift form.
+  Recommendation names the canonical from the registry.
+- `messaging-channel-filename-matches-slug` (info/warn) — when
+  `frontmatter.channel:` is set, the file's basename SHOULD
+  equal `channel-{channel}.md`. Catches both the next90 case
+  (filename uses drift form, frontmatter uses canonical) and
+  the lean-media case (both use drift form).
+
+### Brand-repo migrations are post-merge
+
+The spec change just declares canonical + drift form. Brand
+migrations happen in separate PRs after this lands:
+
+- **lean-media:** change `channel: onepager` → `channel: one-pager`
+  in frontmatter; `git mv messaging/channel-onepager.md
+  messaging/channel-one-pager.md`.
+- **next90:** `git mv messaging/channel-onepager.md
+  messaging/channel-one-pager.md`; `git mv examples/onepager-*.md
+  examples/one-pager-*.md` (3 files).
+- **gramatr:** unaffected (no one-pager files).
+
+### Why not alias-aware?
+
+Considered the v1.7.5 alias-aware pattern (declare `onepager` as
+legacy alias of `one-pager`, both validate). Rejected: slug
+*values* aren't field *names*. The alias mechanism is about
+field-name backward compatibility in frontmatter schemas; slug
+values are content. Extending the alias-aware machinery to cover
+slug-content drift would stretch its meaning. A separate drift
+registry is the cleaner pattern.
+
+### Changed
+
+- `brand.yaml` (`contract_version`): 1.13.0 → 1.14.0.
+- `brand.yaml` (new `conventions.channel_slug_canonicalizations:`):
+  registry with one drift entry (`onepager → one-pager`).
+- `brand.yaml` (`layers.messaging.directories[].contents[].notes`):
+  added v1.14.0 paragraph referencing the registry and the
+  canonical-slug expectation.
+
+### Backward compatibility
+
+Purely additive. No fields renamed, no required-field tightening.
+v1.13.x brands validate cleanly against v1.14.0 with zero changes.
+Drift forms in current brand files continue to validate; they
+just become discoverable via the new registry and will surface
+as advisories once the validator rules ship.
+
 ## [1.13.0] — 2026-05-11
 
 Minor release. Adds two optional frontmatter fields to
