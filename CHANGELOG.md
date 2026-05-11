@@ -4,6 +4,25 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.7.2] — 2026-05-10
+
+Fix B3 of [`gramatr/brand-spec#36`](https://github.com/gramatr/brand-spec/issues/36).
+
+**KYKC canonicalization + scrub of v1.4 hallucination.**
+
+The methodology authored by Brian Handrigan at the original grāmatr digital marketing agency (circa 2005) is **"Know Yourself, Know Your Customer"** — two halves, both required, with the **CognitiveJourney** as the structured artifact that operationalizes the customer half.
+
+The v1.4.0 PR (commit `06f6938`) shipped a hallucinated alternative — "Know Your Kingdom + Know Your Customer" — in `templates/journey-example/journey/_framework.md` (4 references) and `brand.yaml`'s journey layer description (1 reference). It also shipped an incomplete expansion (just "Know Your Customer") in 4 other places (`README.md`, `CHANGELOG.md` v1.4 entry, `brand.yaml` example, template frontmatter), losing the self-knowledge half entirely.
+
+This release scrubs both errors and propagates the canonical:
+
+- `templates/journey-example/journey/_framework.md` — frontmatter `methodology_provenance.name`, the "## The discipline (KYKC)" body section, and the "what your Kingdom offers" prose all corrected to use "Know Yourself" / "Know Yourself, Know Your Customer" / "what you can credibly offer"
+- `brand.yaml` — example in `methodology_provenance.name.notes` corrected; journey layer description's KYKC expansion corrected
+- `README.md` — "What's new in v1.4" section corrected to the full canonical
+- `CHANGELOG.md` — historical v1.4 entry corrected (the entry was documenting the canonical methodology, not "what shipped at the time"; the methodology itself was authored at the original grāmatr agency in 2005, not in 2026)
+
+PATCH bump (1.7.1 → 1.7.2) per VERSIONING.md — additive doc/example correction; no schema change; no rule change; no template structural change. Existing brands that already use the v1.4 hallucinated wording in their own `journey/_framework.md` should opt in to the canonical at their own pace.
+
 ## [1.7.1] — 2026-05-10
 
 Closes B2 of
@@ -765,7 +784,7 @@ currently have a `journey/` directory and the layer is
 `recommended: true, required: false`.
 
 This release introduces the first methodology brought into brand-spec
-with explicit, structured attribution. **KYKC (Know Your Customer)** and
+with explicit, structured attribution. **KYKC (Know Yourself, Know Your Customer)** and
 **CognitiveJourney** were developed by Brian Handrigan at the grāmatr
 digital marketing agency circa 2005 and refined across 20 years of
 agency, adtech, and AI work. The grāmatr brand identity has been

@@ -3,7 +3,7 @@ type: framework
 version: "1.0"
 status: sample
 methodology_provenance:
-  name: "Know Your Customer (KYKC)"
+  name: "Know Yourself, Know Your Customer (KYKC)"
   short_name: KYKC
   originator: "Brian Handrigan"
   developed_at: "grāmatr (digital marketing agency)"
@@ -26,22 +26,22 @@ methodology_provenance:
 
 ## The discipline (KYKC)
 
-**KYKC — Know Your Kingdom + Know Your Customer.** Two halves, both
+**KYKC — Know Yourself, Know Your Customer.** Two halves, both
 required.
 
-**Know Your Kingdom** is the inventory side: every capability, claim,
+**Know Yourself** is the inventory side: every capability, claim,
 proof point, and constraint your brand can credibly stand behind. Most
 brands document this implicitly across `identity.md`, `voice.md`,
-`vocabulary.md`, `proof/`, and `data/`. The Kingdom side of KYKC is
-already covered by other layers in brand-spec; this layer does not
-re-document it.
+`vocabulary.md`, `proof/`, and `data/`. The self-knowledge side of
+KYKC is already covered by other layers in brand-spec; this layer does
+not re-document it.
 
 **Know Your Customer** is the cognition side: the prospect's mental
 state at each stage of their thinking, in their own words, using their
 own concept boundaries. This is what the journey layer captures. The
 discipline is to **lead with the customer's cognition, not your
 capability inventory** — write content that meets prospects where they
-are, then bridge to what your Kingdom offers, never the reverse.
+are, then bridge to what you can credibly offer, never the reverse.
 
 When brands skip the customer half, they default to talking about
 themselves. The output reads as feature-pitch instead of problem-fit.
