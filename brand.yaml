@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.16.0
+contract_version: 1.17.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -1439,7 +1439,13 @@ layers:
       rule `iconography-decorative-distinction-recommended`.
     files:
       - path: design-tokens.md
-        required: true
+        required: false
+        recommended: true
+        notes: |
+          (v1.17) Required when the brand uses the single-file pattern
+          for design tokens. MUST NOT exist when the brand uses the
+          folder pattern (in which case the canonical entry point is
+          `design-tokens/README.md` or `design-tokens/_framework.md`).
         frontmatter:
           mode:          { type: string, required: false, notes: "e.g., 'dark-primary' | 'light-primary' | 'mixed'" }
           design_system: { type: string, required: false, notes: "e.g., the upstream design system the brand extends" }
@@ -1450,6 +1456,49 @@ layers:
           - Email
           - Logos
     directories:
+      - path: design-tokens/
+        required: false
+        notes: |
+          (v1.17) Design-tokens folder pattern. When present,
+          `design-tokens.md` at the root MUST NOT exist. The folder
+          MUST contain a canonical entry point — either `README.md`
+          or `_framework.md` — carrying the same frontmatter fields
+          as the single-file form (`mode`, `design_system`). Optional
+          sub-files cover the body sections of the single-file form
+          (`colors.md`, `typography.md`, `email.md`, `logos.md`,
+          `visual-mode.md`) with brand-defined kebab-case naming.
+
+          Mutually exclusive with the root `design-tokens.md` form
+          per the `design-tokens-pattern-exclusive` validation rule.
+
+          Sibling to the existing `design/` folder (additional design
+          specs: visual-system, iconography, photography-treatment,
+          etc.) — not nested under it. Symmetry with v1.16's
+          `identity/` / `vocabulary/` / `agent-context/` placement.
+        contents:
+          - path: README.md
+            required: false
+            notes: |
+              Canonical entry point for the folder pattern (alternative
+              to `_framework.md`). Exactly one of `README.md` or
+              `_framework.md` MUST exist when the folder pattern is
+              used. Carries the same frontmatter as the single-file
+              `design-tokens.md` (`mode`, `design_system`).
+            frontmatter:
+              mode:          { type: string, required: false }
+              design_system: { type: string, required: false }
+          - path: _framework.md
+            required: false
+            notes: "Alternative to `README.md`; same purpose, same frontmatter contract."
+          - pattern: "{sub-section}.md"
+            required: false
+            notes: |
+              Optional sub-files for individual token sections — e.g.,
+              `colors.md`, `typography.md`, `email.md`, `logos.md`,
+              `visual-mode.md`. Brands MAY add any kebab-case
+              sub-files; the spec does not enumerate them. Sub-files
+              SHOULD carry minimal frontmatter (`status` recommended)
+              and a clear H1.
       - path: assets/
         required: true
         notes: |

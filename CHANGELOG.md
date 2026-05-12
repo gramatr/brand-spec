@@ -4,6 +4,70 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.17.0] — 2026-05-12
+
+Minor release. Extends the v1.16 universal-folder-pattern work to
+the last remaining root-file-only design slot: `design-tokens.md`.
+Closes [issue #63](https://github.com/gramatr/brand-spec/issues/63).
+
+### Motivation
+
+After v1.16, three layers (identity, vocabulary, agent_context)
+gained the dual-pattern shape. `design-tokens.md` was the
+remaining required root-file with multiple section concerns
+(Visual Mode, Colors, Typography, Email, Logos) that wanted
+independent edit cadence. NEXT90's 143-line single file is the
+surfaced example: typography review on one cadence, color/mode
+work on another, email-specific tokens revised when templates
+change.
+
+### Changes
+
+- **`design.design-tokens` slot** — new optional `directories:`
+  block under the existing `design` layer. Brand chooses
+  `design-tokens.md` (single-file, v1.0 default) OR
+  `design-tokens/` (folder with canonical `README.md` or
+  `_framework.md` entry point + optional sub-files like
+  `colors.md`, `typography.md`, `email.md`, `logos.md`,
+  `visual-mode.md`). Mutually exclusive per new
+  `design-tokens-pattern-exclusive` validation rule.
+- **Placement**: `design-tokens/` sits at the **brand root**, not
+  nested under `design/`. Symmetry with v1.16's `identity/` /
+  `vocabulary/` / `agent-context/` placement. The existing
+  `design/` folder is unchanged and continues to carry additional
+  design specs (visual-system, iconography, photography-treatment,
+  social-asset-spec, etc.).
+
+### Backward compatibility
+
+Fully additive. v1.16-and-prior brands continue to validate
+unchanged. The folder pattern is opt-in; the single-file form is
+not deprecated.
+
+### Validator changes
+
+Three new pattern-exclusive rules in the companion
+`gramatr/brand-spec-validator` v0.5.0:
+
+- `design-tokens-pattern-exclusive` (error) — both forms present.
+- `design-tokens-required` (error) — neither form present (the
+  `design` layer is `required: true`).
+- `design-tokens-folder-index` (error) — when the folder form is
+  used, the folder MUST contain exactly one of `README.md` or
+  `_framework.md`.
+
+Implementation reuses the generic `ruleLayerPatternExclusive` /
+`ruleLayerFolderIndex` helpers introduced in v0.4.0.
+
+### Reference implementation
+
+`next90-brand` is expected to lower `design-tokens.md` →
+`design-tokens/` once v1.17 lands and the validator ships. With
+that lowering, NEXT90 has zero loose root files (other than the
+intentional README/HANDOFF/SPEC at brand root).
+
+---
+
 ## [1.16.0] — 2026-05-12
 
 Minor release. Universalizes the dual-pattern (single-file OR
