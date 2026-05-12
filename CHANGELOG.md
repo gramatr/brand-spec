@@ -4,6 +4,71 @@ All notable changes to `brand-spec` are documented here. The schema
 follows semver: minor bumps are additive (no breaking changes to
 prior-version brands); major bumps may tighten or rename fields.
 
+## [1.16.0] — 2026-05-12
+
+Minor release. Universalizes the dual-pattern (single-file OR
+folder, mutually exclusive) introduced for `voice` in v1.2 across
+the three remaining root-file-only required/recommended layers:
+`identity`, `vocabulary`, and `agent_context`. Closes
+[issue #60](https://github.com/gramatr/brand-spec/issues/60).
+
+### Motivation
+
+Before v1.16, brand authors faced two mental models per layer:
+folder-shaped (`personas/`, `journey/`, `messaging/`, etc.) or
+root-file-only (`identity.md`, `vocabulary.md`,
+`agent-context.md`). Two layers (`voice`, `design`) already
+supported both. The inconsistency forced brands that outgrow a
+single file — NEXT90's `identity.md` is the surfaced example,
+with founders, positioning, "what we are not," and proprietary
+concepts each wanting independent edit cadence — to either keep
+flat-file content that no longer fits or break CI.
+
+### Changes
+
+- **`identity`** — new optional `directories:` block. Brand
+  chooses `identity.md` (single-file, v1.0 default) OR
+  `identity/` (folder with canonical `README.md` or
+  `_framework.md` entry point plus optional sub-files like
+  `positioning.md`, `founders.md`, `what-we-are-not.md`,
+  `proprietary-concepts.md`). Mutually exclusive per new rule
+  `identity-pattern-exclusive`.
+- **`vocabulary`** — same pattern. `vocabulary.md` OR
+  `vocabulary/` (folder with canonical entry point plus optional
+  `preferred.md`, `forbidden.md`, `glossary.md`, and a
+  `registers/<register-slug>.md` sub-folder for per-register
+  vocabulary deltas tied to multi-register voice). New rule
+  `vocabulary-pattern-exclusive`.
+- **`agent_context`** — same pattern. `agent-context.md` OR
+  `agent-context/` (folder with canonical entry point plus
+  optional per-audience digest files). New rule
+  `agent-context-pattern-exclusive`.
+
+### Backward compatibility
+
+Fully additive. All v1.15-and-prior brands continue to validate
+unchanged. The folder patterns are opt-in per layer; brands that
+keep their single-file form remain conformant indefinitely. The
+single-file form is not deprecated.
+
+### Validator changes
+
+Three new pattern-exclusive rules
+(`{identity,vocabulary,agent-context}-pattern-exclusive`) modeled
+on the existing `voice-pattern-exclusive` rule. Brands using both
+forms of any layer get an `error` severity diagnostic. Brands
+using exactly one form pass cleanly. Companion PR in
+`gramatr/brand-spec-validator`.
+
+### Reference implementation
+
+`next90-brand` is expected to be the first brand to lower
+`identity.md`, `vocabulary.md`, and `design-tokens.md` (via the
+existing `design` dual-pattern) once v1.16 lands and the
+validator ships.
+
+---
+
 ## [1.15.0] — 2026-05-11
 
 Minor release. New top-level convention block
