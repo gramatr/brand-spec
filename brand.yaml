@@ -882,9 +882,6 @@ layers:
       - path: agent-context.md
         required: false
         recommended: true
-        notes: |
-          Required when the brand uses the single-file pattern.
-          MUST NOT exist when the brand uses the folder pattern.
         frontmatter:
           schema_version:   { type: integer, required: true,  notes: "matches brand-spec schema_version this file targets" }
           summary:          { type: string,  required: true,  notes: "1-paragraph human description of the brand" }
@@ -918,6 +915,11 @@ layers:
           gives an agent enough to write on-brand without loading the
           full repo." When the agent has more budget, it SHOULD load
           the layers named in `priority_layers` next.
+
+          (v1.16) Required when the brand uses the single-file pattern.
+          MUST NOT exist when the brand uses the folder pattern (in
+          which case the canonical entry point is
+          `agent-context/README.md` or `agent-context/_framework.md`).
     directories:
       - path: agent-context/
         required: false
