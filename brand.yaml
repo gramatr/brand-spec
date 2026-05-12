@@ -14,7 +14,7 @@
 
 schema_version: 1
 contract_name: gramatr.brand
-contract_version: 1.15.0
+contract_version: 1.16.0
 
 # -----------------------------------------------------------------------------
 # Cross-cutting conventions
@@ -862,10 +862,29 @@ layers:
       agents that cannot or should not load every layer up front. Small
       brands MAY skip this; larger brands benefit from a curated digest
       that fits in a single prompt window.
+
+      (v1.16) A brand MAY use ONE of two patterns — never both:
+
+      1. Single-file (v1.0, default): an `agent-context.md` file at
+         the brand root.
+
+      2. Folder (v1.16): an `agent-context/` directory containing a
+         canonical entry point (`agent-context/README.md` or
+         `agent-context/_framework.md`) plus optional sub-files for
+         per-audience or per-surface agent digests. Use this when the
+         brand maintains multiple distinct agent-facing digests
+         (e.g., one for customer-facing content agents, one for
+         internal-tooling agents) that would diverge if collapsed.
+
+      Mixing the two patterns within a single brand is invalid (see
+      `agent-context-pattern-exclusive` validation rule).
     files:
       - path: agent-context.md
         required: false
         recommended: true
+        notes: |
+          Required when the brand uses the single-file pattern.
+          MUST NOT exist when the brand uses the folder pattern.
         frontmatter:
           schema_version:   { type: integer, required: true,  notes: "matches brand-spec schema_version this file targets" }
           summary:          { type: string,  required: true,  notes: "1-paragraph human description of the brand" }
@@ -899,14 +918,80 @@ layers:
           gives an agent enough to write on-brand without loading the
           full repo." When the agent has more budget, it SHOULD load
           the layers named in `priority_layers` next.
+    directories:
+      - path: agent-context/
+        required: false
+        notes: |
+          (v1.16) Agent-context folder pattern. When present,
+          `agent-context.md` at the root MUST NOT exist. The folder
+          MUST contain a canonical entry point — either `README.md` or
+          `_framework.md` — carrying the same required frontmatter
+          fields as the single-file form (`schema_version`, `summary`,
+          `priority_layers`).
+        contents:
+          - path: README.md
+            required: false
+            notes: |
+              Canonical entry point for the folder pattern (alternative
+              to `_framework.md`). When the folder pattern is used,
+              exactly one of `README.md` or `_framework.md` MUST exist.
+              Carries the same required frontmatter as the single-file
+              `agent-context.md`.
+            frontmatter:
+              schema_version: { type: integer, required: true }
+              summary:        { type: string,  required: true }
+              priority_layers:
+                type: array
+                required: true
+                items: { type: string }
+                accepts_aliases: true
+                canonical_name: priority_layers_refs
+                legacy_names: [priority_layers]
+          - path: _framework.md
+            required: false
+            notes: "Alternative to `README.md`; same purpose, same frontmatter contract."
+          - pattern: "{digest-slug}.md"
+            required: false
+            notes: |
+              Optional additional digest files for distinct
+              agent-facing contexts (e.g.,
+              `customer-content-agents.md`, `internal-tooling.md`,
+              `support-agents.md`). Each digest SHOULD declare its
+              intended audience in frontmatter.
 
   # --- IDENTITY ----------------------------------------------------------
   identity:
     required: true
-    description: "Who the brand is. The single most-load-bearing file in the repo."
+    description: |
+      Who the brand is. The single most-load-bearing slot in the repo.
+
+      (v1.16) A brand MAY use ONE of two patterns — never both:
+
+      1. Single-file (v1.0, default): an `identity.md` file at the brand
+         root. Use this when one file is sufficient to carry positioning,
+         elevator pitch, mission, founders, "what we are not," and
+         proprietary concepts.
+
+      2. Folder (v1.16): an `identity/` directory containing a canonical
+         entry point (`identity/README.md` or `identity/_framework.md`)
+         that carries the required frontmatter fields, plus optional
+         sub-files (e.g., `identity/positioning.md`,
+         `identity/founders.md`, `identity/proprietary-concepts.md`,
+         `identity/what-we-are-not.md`). Use this when the identity
+         content is too large to read as one file or when distinct
+         sub-concerns benefit from independent edit cadences.
+
+      Mixing the two patterns within a single brand is invalid (see
+      `identity-pattern-exclusive` validation rule).
     files:
       - path: identity.md
-        required: true
+        required: false
+        recommended: true
+        notes: |
+          Required when the brand uses the single-file pattern.
+          MUST NOT exist when the brand uses the folder pattern (in
+          which case the canonical entry point is `identity/README.md`
+          or `identity/_framework.md`).
         frontmatter:
           slug:        { type: string, required: true,  notes: "kebab-case repo identifier" }
           name:        { type: string, required: true,  notes: "display name" }
@@ -925,6 +1010,47 @@ layers:
           - Founders
           - "What {Brand} Is Not"
           - "Proprietary Concepts"
+    directories:
+      - path: identity/
+        required: false
+        notes: |
+          (v1.16) Identity folder pattern. When present, `identity.md`
+          at the root MUST NOT exist. The folder MUST contain a
+          canonical entry point — either `README.md` or `_framework.md`
+          — that carries the same required frontmatter fields as the
+          single-file form (`slug`, `name`, `tagline`).
+        contents:
+          - path: README.md
+            required: false
+            notes: |
+              Canonical entry point for the folder pattern (alternative
+              to `_framework.md`). When the folder pattern is used,
+              exactly one of `README.md` or `_framework.md` MUST exist.
+              Carries the same required frontmatter as the single-file
+              `identity.md` (slug, name, tagline). Body MAY summarize
+              and link to sub-files for the long-form sections.
+            frontmatter:
+              slug:        { type: string, required: true,  notes: "kebab-case repo identifier" }
+              name:        { type: string, required: true,  notes: "display name" }
+              legal_name:  { type: string, required: false }
+              tagline:     { type: string, required: true }
+              industry:    { type: string, required: false }
+              website:     { type: string, required: false, format: url }
+              domains:     { type: array,  required: false, items: { type: string } }
+              founded:     { type: integer, required: false }
+              org:         { type: string, required: false, notes: "e.g., GitHub org slug" }
+          - path: _framework.md
+            required: false
+            notes: "Alternative to `README.md`; same purpose, same frontmatter contract. Exactly one MUST exist when the folder pattern is used."
+          - pattern: "{sub-concern}.md"
+            required: false
+            notes: |
+              Optional sub-files for distinct identity sub-concerns
+              (e.g., `positioning.md`, `founders.md`,
+              `proprietary-concepts.md`, `what-we-are-not.md`). Brands
+              MAY add any kebab-case sub-files; the spec does not
+              enumerate them. Sub-files SHOULD carry minimal
+              frontmatter (`status` recommended) and a clear H1.
 
   # --- VOICE -------------------------------------------------------------
   voice:
@@ -1188,15 +1314,84 @@ layers:
   # --- VOCABULARY --------------------------------------------------------
   vocabulary:
     required: true
-    description: "Preferred terms, forbidden terms, glossary. Drives lint at generation time."
+    description: |
+      Preferred terms, forbidden terms, glossary. Drives lint at
+      generation time.
+
+      (v1.16) A brand MAY use ONE of two patterns — never both:
+
+      1. Single-file (v1.0, default): a `vocabulary.md` file at the
+         brand root. Use this when preferred + forbidden + glossary
+         fit comfortably in one file.
+
+      2. Folder (v1.16): a `vocabulary/` directory containing a
+         canonical entry point (`vocabulary/README.md` or
+         `vocabulary/_framework.md`) plus optional sub-files such as
+         `vocabulary/preferred.md`, `vocabulary/forbidden.md`,
+         `vocabulary/glossary.md`, or per-register vocabulary deltas
+         (`vocabulary/registers/<register-slug>.md`). Use this when the
+         glossary is long, when per-register vocabulary deltas warrant
+         their own files, or when the three sections have independent
+         edit cadences.
+
+      Mixing the two patterns within a single brand is invalid (see
+      `vocabulary-pattern-exclusive` validation rule).
     files:
       - path: vocabulary.md
-        required: true
+        required: false
+        recommended: true
+        notes: |
+          Required when the brand uses the single-file pattern.
+          MUST NOT exist when the brand uses the folder pattern.
         frontmatter: {}        # observed empty; reserved for future fields
         body_sections_recommended:
           - "Preferred Terms"
           - "Forbidden Terms"
           - "Glossary"
+    directories:
+      - path: vocabulary/
+        required: false
+        notes: |
+          (v1.16) Vocabulary folder pattern. When present,
+          `vocabulary.md` at the root MUST NOT exist. The folder MUST
+          contain a canonical entry point — either `README.md` or
+          `_framework.md`.
+        contents:
+          - path: README.md
+            required: false
+            notes: |
+              Canonical entry point for the folder pattern (alternative
+              to `_framework.md`). When the folder pattern is used,
+              exactly one of `README.md` or `_framework.md` MUST exist.
+              Body MAY summarize and link to sub-files.
+            frontmatter: {}
+          - path: _framework.md
+            required: false
+            notes: "Alternative to `README.md`; same purpose. Exactly one MUST exist when the folder pattern is used."
+          - pattern: "{sub-concern}.md"
+            required: false
+            notes: |
+              Optional sub-files for vocabulary sub-concerns (e.g.,
+              `preferred.md`, `forbidden.md`, `glossary.md`). Brands
+              MAY add any kebab-case sub-files.
+          - path: registers/
+            required: false
+            notes: |
+              (v1.16) Optional per-register vocabulary deltas. When a
+              brand uses the multi-register voice pattern and a
+              register has its own preferred/forbidden term deltas
+              from the brand baseline, those deltas live in
+              `vocabulary/registers/<register-slug>.md`. Each delta
+              file MUST declare `register: <slug>` in frontmatter
+              matching a `voice/registers/<slug>.md` file.
+            contents:
+              - pattern: "{register-slug}.md"
+                required: false
+                frontmatter:
+                  register:
+                    type: string
+                    required: true
+                    notes: "Register slug; MUST match a `voice/registers/<slug>.md` file."
 
   # --- DESIGN TOKENS -----------------------------------------------------
   design:
